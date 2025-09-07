@@ -1,10 +1,11 @@
 
 use axum::{extract::Path, Json};
 use serde::{Deserialize, Serialize};
+use tracing::info;
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
-use crate::error::AppError;
+use crate::{error::AppError, types::AppState};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct ExpenseEntry {
@@ -34,10 +35,10 @@ impl ExpenseEntry {
     }
 }
 
-pub fn router() -> axum::Router {
+pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
         .route("/", axum::routing::get(list_expense_entries).post(create_expense_entry))
-        .route("/:uid", axum::routing::get(get_expense_entry).put(update_expense_entry).delete(delete_expense_entry))
+        .route("/{uid}", axum::routing::get(get_expense_entry).put(update_expense_entry).delete(delete_expense_entry))
 }
 
 async fn list_expense_entries() -> Result<Json<Vec<ExpenseEntry>>, AppError> {
@@ -49,14 +50,17 @@ async fn create_expense_entry() -> Result<Json<ExpenseEntry>, AppError> {
 }
 
 async fn get_expense_entry(Path(uid): Path<Uuid>) -> Result<Json<ExpenseEntry>, AppError> {
+    info!("Fetching expense entry with uid: {}", uid);
     Ok(Json(ExpenseEntry::new()))
 }
 
 async fn update_expense_entry(Path(uid): Path<Uuid>) -> Result<Json<ExpenseEntry>, AppError> {
+    info!("Updating expense entry with uid: {}", uid);
     Ok(Json(ExpenseEntry::new()))
 }
 
 async fn delete_expense_entry(Path(uid): Path<Uuid>) -> Result<(), AppError> {
+    info!("Deleting expense entry with uid: {}", uid);
     Ok(())
 }
 

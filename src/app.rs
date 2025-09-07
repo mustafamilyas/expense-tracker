@@ -1,12 +1,13 @@
-use axum::{http::StatusCode, routing::{get, post}, Json, Router};
-use serde::Deserialize;
-use serde::Serialize;
+use axum::{routing::get, Router};
 
-use crate::routes::expense_entry;
+use crate::{routes, types::AppState};
 
-pub fn build_router() -> Router {
+pub fn build_router(app_state: AppState) -> Router {
 
     Router::new()
-        // `GET /` goes to `root`
-        .nest("/expense-entries", expense_entry::router())
+        .nest("/expense-entries", routes::expense_entry::router())
+        .route("/health", get(routes::health::health))
+        .route("/version", get(routes::version::version))
+        .with_state(app_state)
+
 }
