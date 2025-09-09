@@ -7,6 +7,7 @@ mod db;
 mod error;
 mod routes;
 mod types;
+mod openapi;
 
 #[tokio::main]
 async fn main() -> Result<()> {

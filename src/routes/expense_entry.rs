@@ -1,20 +1,21 @@
 
-use axum::{extract::Path, Json};
+use axum::{extract::{Path, State}, Json};
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use tracing::info;
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
 use crate::{error::AppError, types::AppState};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 struct ExpenseEntry {
     pub uid: Uuid,
     pub price: f64,
     pub product: String,
 
     pub group_uid: Uuid,
-    pub category_uid: u64,
+    pub category_uid: Uuid,
 
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -28,7 +29,7 @@ impl ExpenseEntry {
             price: 0.0,
             product: String::new(),
             group_uid: Uuid::now_v7(),
-            category_uid: 0,
+            category_uid: Uuid::now_v7(),
             created_at: time,
             updated_at: time,
         }
@@ -41,12 +42,59 @@ pub fn router() -> axum::Router<AppState> {
         .route("/{uid}", axum::routing::get(get_expense_entry).put(update_expense_entry).delete(delete_expense_entry))
 }
 
-async fn list_expense_entries() -> Result<Json<Vec<ExpenseEntry>>, AppError> {
-    Ok(Json(vec![ExpenseEntry::new()]))
+async fn list_expense_entries(
+    State(state): State<AppState>
+) -> Result<Json<Vec<ExpenseEntry>>, AppError> {
+    let db_pool = &state.db_pool;
+    let rows = sqlx::query_as(
+        r#"
+        SELECT uid, price, product, group_uid, category_uid, created_at, updated_at
+        FROM expense_entries
+        "#
+    )    .fetch_all(db_pool)
+    .await.map_err(
+        |e| AppError::Internal(anyhow::anyhow!(e))
+    )?;
+    Ok(Json(rows))
 }
 
-async fn create_expense_entry() -> Result<Json<ExpenseEntry>, AppError> {
-    Ok(Json(ExpenseEntry::new()))
+#[derive(Debug, Deserialize)]
+struct CreateExpenseEntryPayload {
+    price: f64,
+    product: String,
+    group_uid: Uuid,
+    category_uid: Uuid,
+}
+
+async fn create_expense_entry(State(state): State<AppState>, Json(payload): Json<CreateExpenseEntryPayload>) -> Result<Json<ExpenseEntry>, AppError> {
+    let db_pool = &state.db_pool;
+    let entry = ExpenseEntry {
+        uid: Uuid::now_v7(),
+        price: payload.price,
+        product: payload.product,
+        group_uid: payload.group_uid,
+        category_uid: payload.category_uid,
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+    sqlx::query(
+        r#"
+        INSERT INTO expense_entries (uid, price, product, group_uid, category_uid, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        "#,
+    )
+    .bind(&entry.uid)
+    .bind(&entry.price)
+    .bind(&entry.product)
+    .bind(&entry.group_uid)
+    .bind(&entry.category_uid)
+    .bind(&entry.created_at)
+    .bind(&entry.updated_at)
+    .execute(db_pool)
+    .await.map_err(
+        |e| AppError::Internal(anyhow::anyhow!(e))
+    )?;
+    Ok(Json(entry))
 }
 
 async fn get_expense_entry(Path(uid): Path<Uuid>) -> Result<Json<ExpenseEntry>, AppError> {

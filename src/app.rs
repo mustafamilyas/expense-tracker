@@ -8,6 +8,7 @@ pub fn build_router(app_state: AppState) -> Router {
         .nest("/expense-entries", routes::expense_entry::router())
         .route("/health", get(routes::health::health))
         .route("/version", get(routes::version::version))
+        .merge(routes::users::router())
         .with_state(app_state)
 
 }

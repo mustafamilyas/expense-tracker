@@ -9,6 +9,8 @@ pub enum AppError {
     BadRequest(String),
     #[error(transparent)]
     Internal(#[from] anyhow::Error),
+    #[error("unauthorized")]
+    Unauthorized(String),
 }
 
 impl IntoResponse for AppError {
@@ -23,6 +25,7 @@ impl IntoResponse for AppError {
                 )
                     .into_response()
             }
+            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg).into_response(),
         }
     }
 }
