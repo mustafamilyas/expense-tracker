@@ -6,35 +6,9 @@ use tracing::info;
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
-use crate::{error::AppError, types::AppState};
+use crate::{error::app::AppError, repos::expense_entry::ExpenseEntry, types::AppState};
 
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-struct ExpenseEntry {
-    pub uid: Uuid,
-    pub price: f64,
-    pub product: String,
 
-    pub group_uid: Uuid,
-    pub category_uid: Uuid,
-
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
-impl ExpenseEntry {
-    fn new() -> Self {
-        let time = Utc::now();
-        ExpenseEntry {
-            uid: Uuid::now_v7(),
-            price: 0.0,
-            product: String::new(),
-            group_uid: Uuid::now_v7(),
-            category_uid: Uuid::now_v7(),
-            created_at: time,
-            updated_at: time,
-        }
-    }
-}
 
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
@@ -74,6 +48,7 @@ async fn create_expense_entry(State(state): State<AppState>, Json(payload): Json
         product: payload.product,
         group_uid: payload.group_uid,
         category_uid: payload.category_uid,
+        created_by: "system".to_string(),
         created_at: Utc::now(),
         updated_at: Utc::now(),
     };

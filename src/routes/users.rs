@@ -12,7 +12,7 @@ use tracing::info;
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
-use crate::{error::AppError, types::AppState};
+use crate::{error::app::AppError, types::AppState};
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct User {

@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS expense_entries (
   uid UUID PRIMARY KEY,
   product VARCHAR NOT NULL,
   price NUMERIC(12,2) NOT NULL,
+  created_by VARCHAR NOT NULL, -- freeform user identifier (e.g. email or chat name)
   category_uid UUID NULL,
   group_uid UUID NOT NULL REFERENCES expense_groups(uid),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
