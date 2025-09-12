@@ -5,6 +5,7 @@ use sqlx::FromRow;
 use tracing::info;
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use utoipa::ToSchema;
 
 use crate::{error::app::AppError, repos::expense_entry::ExpenseEntry, types::AppState};
 
@@ -16,7 +17,8 @@ pub fn router() -> axum::Router<AppState> {
         .route("/{uid}", axum::routing::get(get_expense_entry).put(update_expense_entry).delete(delete_expense_entry))
 }
 
-async fn list_expense_entries(
+#[utoipa::path(get, path = "/expense-entries", responses((status = 200, body = [ExpenseEntry])), tag = "Expense Entries")]
+pub async fn list_expense_entries(
     State(state): State<AppState>
 ) -> Result<Json<Vec<ExpenseEntry>>, AppError> {
     let db_pool = &state.db_pool;
@@ -32,15 +34,16 @@ async fn list_expense_entries(
     Ok(Json(rows))
 }
 
-#[derive(Debug, Deserialize)]
-struct CreateExpenseEntryPayload {
-    price: f64,
-    product: String,
-    group_uid: Uuid,
-    category_uid: Uuid,
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CreateExpenseEntryPayload {
+    pub price: f64,
+    pub product: String,
+    pub group_uid: Uuid,
+    pub category_uid: Uuid,
 }
 
-async fn create_expense_entry(State(state): State<AppState>, Json(payload): Json<CreateExpenseEntryPayload>) -> Result<Json<ExpenseEntry>, AppError> {
+#[utoipa::path(post, path = "/expense-entries", request_body = CreateExpenseEntryPayload, responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries")]
+pub async fn create_expense_entry(State(state): State<AppState>, Json(payload): Json<CreateExpenseEntryPayload>) -> Result<Json<ExpenseEntry>, AppError> {
     let db_pool = &state.db_pool;
     let entry = ExpenseEntry {
         uid: Uuid::now_v7(),
@@ -72,21 +75,23 @@ async fn create_expense_entry(State(state): State<AppState>, Json(payload): Json
     Ok(Json(entry))
 }
 
-async fn get_expense_entry(Path(uid): Path<Uuid>) -> Result<Json<ExpenseEntry>, AppError> {
+#[utoipa::path(get, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries")]
+pub async fn get_expense_entry(Path(uid): Path<Uuid>) -> Result<Json<ExpenseEntry>, AppError> {
     info!("Fetching expense entry with uid: {}", uid);
     Ok(Json(ExpenseEntry::new()))
 }
 
-async fn update_expense_entry(Path(uid): Path<Uuid>) -> Result<Json<ExpenseEntry>, AppError> {
+#[utoipa::path(put, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries")]
+pub async fn update_expense_entry(Path(uid): Path<Uuid>) -> Result<Json<ExpenseEntry>, AppError> {
     info!("Updating expense entry with uid: {}", uid);
     Ok(Json(ExpenseEntry::new()))
 }
 
-async fn delete_expense_entry(Path(uid): Path<Uuid>) -> Result<(), AppError> {
+#[utoipa::path(delete, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Expense Entries")]
+pub async fn delete_expense_entry(Path(uid): Path<Uuid>) -> Result<(), AppError> {
     info!("Deleting expense entry with uid: {}", uid);
     Ok(())
 }
-
 
 
 

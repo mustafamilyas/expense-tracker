@@ -1,0 +1,102 @@
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
+use uuid::Uuid;
+use utoipa::ToSchema;
+
+use crate::error::db::DatabaseError;
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow, ToSchema)]
+pub struct ChatBindRequest {
+    pub id: Uuid,
+    pub platform: String, // from enum via ::text
+    pub p_uid: String,
+    pub nonce: String,
+    pub user_uid: Option<Uuid>,
+    pub expires_at: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateChatBindRequestPayload {
+    pub platform: String,
+    pub p_uid: String,
+    pub nonce: String,
+    pub user_uid: Option<Uuid>,
+    pub expires_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateChatBindRequestPayload {
+    pub user_uid: Option<Option<Uuid>>, // Some(None) to clear, Some(Some(v)) to set
+    pub expires_at: Option<DateTime<Utc>>,
+}
+
+pub struct ChatBindRequestRepo;
+
+impl ChatBindRequestRepo {
+    pub async fn list(db: &sqlx::PgPool) -> Result<Vec<ChatBindRequest>, DatabaseError> {
+        let rows = sqlx::query_as::<_, ChatBindRequest>(
+            r#"SELECT id, platform::text as platform, p_uid, nonce, user_uid, expires_at, created_at
+               FROM chat_bind_requests ORDER BY created_at DESC"#
+        )
+        .fetch_all(db)
+        .await?;
+        Ok(rows)
+    }
+
+    pub async fn get(db: &sqlx::PgPool, id: Uuid) -> Result<ChatBindRequest, DatabaseError> {
+        let row = sqlx::query_as::<_, ChatBindRequest>(
+            r#"SELECT id, platform::text as platform, p_uid, nonce, user_uid, expires_at, created_at
+               FROM chat_bind_requests WHERE id = $1"#
+        )
+        .bind(id)
+        .fetch_one(db)
+        .await?;
+        Ok(row)
+    }
+
+    pub async fn create(db: &sqlx::PgPool, payload: CreateChatBindRequestPayload) -> Result<ChatBindRequest, DatabaseError> {
+        let id = Uuid::new_v4();
+        let row = sqlx::query_as::<_, ChatBindRequest>(
+            r#"INSERT INTO chat_bind_requests (id, platform, p_uid, nonce, user_uid, expires_at)
+               VALUES ($1, CAST($2 AS chat_platform), $3, $4, $5, $6)
+               RETURNING id, platform::text as platform, p_uid, nonce, user_uid, expires_at, created_at"#
+        )
+        .bind(id)
+        .bind(payload.platform)
+        .bind(payload.p_uid)
+        .bind(payload.nonce)
+        .bind(payload.user_uid)
+        .bind(payload.expires_at)
+        .fetch_one(db)
+        .await?;
+        Ok(row)
+    }
+
+    pub async fn update(db: &sqlx::PgPool, id: Uuid, payload: UpdateChatBindRequestPayload) -> Result<ChatBindRequest, DatabaseError> {
+        let current = Self::get(db, id).await?;
+        let user_uid = match payload.user_uid {
+            Some(u) => u,
+            None => current.user_uid,
+        };
+        let expires_at = payload.expires_at.unwrap_or(current.expires_at);
+        let row = sqlx::query_as::<_, ChatBindRequest>(
+            r#"UPDATE chat_bind_requests SET user_uid = $1, expires_at = $2 WHERE id = $3
+               RETURNING id, platform::text as platform, p_uid, nonce, user_uid, expires_at, created_at"#
+        )
+        .bind(user_uid)
+        .bind(expires_at)
+        .bind(id)
+        .fetch_one(db)
+        .await?;
+        Ok(row)
+    }
+
+    pub async fn delete(db: &sqlx::PgPool, id: Uuid) -> Result<(), DatabaseError> {
+        sqlx::query("DELETE FROM chat_bind_requests WHERE id = $1").bind(id)
+            .execute(db)
+            .await?;
+        Ok(())
+    }
+}

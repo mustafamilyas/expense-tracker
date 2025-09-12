@@ -11,17 +11,9 @@ use sqlx::FromRow;
 use tracing::info;
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use utoipa::ToSchema;
 
-use crate::{error::app::AppError, types::AppState};
-
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct User {
-    pub uid: Uuid,
-    pub email: String,
-    pub phash: String,
-    pub created_at: DateTime<Utc>,
-    pub start_over_date: i16,
-}
+use crate::{error::app::AppError, repos::user::User, types::AppState};
 
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
@@ -31,14 +23,16 @@ pub fn router() -> axum::Router<AppState> {
         .route("/login", axum::routing::post(login_user))
 }
 
-#[derive(Debug, Serialize, Deserialize, FromRow)]
-struct UserRead {
+
+#[derive(Debug, Serialize, Deserialize, FromRow, ToSchema)]
+pub struct UserRead {
     pub uid: Uuid,
     pub email: String,
     pub start_over_date: i16,
 }
 
-async fn list_users(State(state): State<AppState>) -> Result<Json<Vec<UserRead>>, AppError> {
+#[utoipa::path(get, path = "/users", responses((status = 200, body = [UserRead])), tag = "Users")]
+pub async fn list_users(State(state): State<AppState>) -> Result<Json<Vec<UserRead>>, AppError> {
     let db_pool = &state.db_pool;
     let rows = sqlx::query_as(
         r#"
@@ -53,14 +47,15 @@ async fn list_users(State(state): State<AppState>) -> Result<Json<Vec<UserRead>>
     Ok(Json(rows))
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateUserPayload {
-    email: String,
-    password: String,
-    start_over_date: i16,
+    pub email: String,
+    pub password: String,
+    pub start_over_date: i16,
 }
 
-async fn create_user(State(state): State<AppState>, Json(payload): Json<CreateUserPayload>) -> Result<Json<UserRead>, AppError> {
+#[utoipa::path(post, path = "/register", request_body = CreateUserPayload, responses((status = 200, body = UserRead)), tag = "Users")]
+pub async fn create_user(State(state): State<AppState>, Json(payload): Json<CreateUserPayload>) -> Result<Json<UserRead>, AppError> {
     let db_pool = &state.db_pool;
     let salt = SaltString::generate(&mut OsRng);
     let phash = argon2::Argon2::default()
@@ -90,7 +85,8 @@ async fn create_user(State(state): State<AppState>, Json(payload): Json<CreateUs
     }))
 }
 
-async fn get_user(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<Json<UserRead>, AppError> {
+#[utoipa::path(get, path = "/users/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = UserRead), (status = 404, description = "Not found")), tag = "Users")]
+pub async fn get_user(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<Json<UserRead>, AppError> {
     info!("Fetching user with uid: {}", uid);
     let user = sqlx::query_as(
         r#"
@@ -111,14 +107,15 @@ async fn get_user(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Resul
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct UpdateUserPayload {
-    email: Option<String>,
-    password: Option<String>,
-    start_over_date: Option<i16>,
+    pub email: Option<String>,
+    pub password: Option<String>,
+    pub start_over_date: Option<i16>,
 }
 
-async fn update_user(State(state): State<AppState>, Path(uid): Path<Uuid>, Json(payload): Json<UpdateUserPayload>) -> Result<Json<UserRead>, AppError> {
+#[utoipa::path(put, path = "/users/{uid}", params(("uid" = Uuid, Path)), request_body = UpdateUserPayload, responses((status = 200, body = UserRead)), tag = "Users")]
+pub async fn update_user(State(state): State<AppState>, Path(uid): Path<Uuid>, Json(payload): Json<UpdateUserPayload>) -> Result<Json<UserRead>, AppError> {
     info!("Updating user with uid: {}", uid);
     let user: User = sqlx::query_as(
         r#"
@@ -148,7 +145,7 @@ async fn update_user(State(state): State<AppState>, Path(uid): Path<Uuid>, Json(
     let _res = sqlx::query(
         r#"
         UPDATE users
-        SET email = $1, phash = $2, start_over_date = $3, updated_at = now()
+        SET email = $1, phash = $2, start_over_date = $3
         WHERE uid = $4
         "#
     )
@@ -170,7 +167,13 @@ async fn update_user(State(state): State<AppState>, Path(uid): Path<Uuid>, Json(
     Ok(Json(updated_user))
 }
 
-async fn delete_user(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<(), AppError> {
+#[derive(Serialize, ToSchema)]
+struct DeleteResponse {
+    success: bool,
+}
+
+#[utoipa::path(delete, path = "/users/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Users")]
+pub async fn delete_user(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<Json<DeleteResponse>, AppError> {
     info!("Deleting user with uid: {}", uid);
     let _ = sqlx::query(
         r#"
@@ -183,16 +186,17 @@ async fn delete_user(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Re
     .await.map_err(
         |e| AppError::Internal(anyhow::anyhow!(e))
     )?;
-    Ok(())
+    Ok(Json(DeleteResponse { success: true }))
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct LoginUserPayload {
-    email: String,
-    password: String,
+    pub email: String,
+    pub password: String,
 }
 
-async fn login_user(State(state): State<AppState>, Json(payload): Json<LoginUserPayload>) -> Result<Json<UserRead>, AppError> {
+#[utoipa::path(post, path = "/login", request_body = LoginUserPayload, responses((status = 200, body = UserRead), (status = 401, description = "Unauthorized")), tag = "Users")]
+pub async fn login_user(State(state): State<AppState>, Json(payload): Json<LoginUserPayload>) -> Result<Json<UserRead>, AppError> {
     let user: User = sqlx::query_as(
         r#"
         SELECT uid, email, start_over_date, phash, created_at
@@ -211,7 +215,7 @@ async fn login_user(State(state): State<AppState>, Json(payload): Json<LoginUser
     let phash = PasswordHash::new(&user.phash)
         .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
 
-    if !argon2::Argon2::default().verify_password(payload.password.as_bytes(), &phash).is_ok() {
+    if !Argon2::default().verify_password(payload.password.as_bytes(), &phash).is_ok() {
         return Err(AppError::Unauthorized("Invalid email or password".into()));
     }
 
@@ -221,7 +225,6 @@ async fn login_user(State(state): State<AppState>, Json(payload): Json<LoginUser
         start_over_date: user.start_over_date,
     }))
 }
-
 
 
 
