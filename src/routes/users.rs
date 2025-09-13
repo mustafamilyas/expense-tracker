@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use tracing::info;
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 use utoipa::ToSchema;
 
 use crate::{error::app::AppError, repos::user::User, types::AppState};
@@ -78,6 +77,9 @@ pub async fn create_user(State(state): State<AppState>, Json(payload): Json<Crea
     .await.map_err(
         |e| AppError::Internal(anyhow::anyhow!(e))
     )?;
+
+    // Create default expense groups for the new user
+    
     Ok(Json(UserRead {
         uid,
         email: payload.email.clone(),

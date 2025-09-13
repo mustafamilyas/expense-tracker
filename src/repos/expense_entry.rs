@@ -56,7 +56,7 @@ pub struct UpdateExpenseEntryPayload {
 
 impl ExpenseEntryRepo {
     pub async fn create_expense_entry(
-        db_pool: &sqlx::PgPool,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         payload: CreateExpenseEntryPayload,
     ) -> Result<ExpenseEntry, DatabaseError> {
         let uid = uuid::Uuid::new_v4();
@@ -73,38 +73,38 @@ impl ExpenseEntryRepo {
         .bind(payload.group_uid)
         .bind(payload.category_uid)
         .bind("system")
-        .fetch_one(db_pool)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(rec)
     }
 
-    pub async fn list(db_pool: &sqlx::PgPool) -> Result<Vec<ExpenseEntry>, DatabaseError> {
+    pub async fn list(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>) -> Result<Vec<ExpenseEntry>, DatabaseError> {
         let recs = sqlx::query_as::<_, ExpenseEntry>(
             r#"SELECT uid, price, product, created_by, group_uid, category_uid, created_at, updated_at
                FROM expense_entries ORDER BY created_at DESC"#
         )
-        .fetch_all(db_pool)
+        .fetch_all(&mut *tx)
         .await?;
         Ok(recs)
     }
 
-    pub async fn get(db_pool: &sqlx::PgPool, uid: Uuid) -> Result<ExpenseEntry, DatabaseError> {
+    pub async fn get(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, uid: Uuid) -> Result<ExpenseEntry, DatabaseError> {
         let rec = sqlx::query_as::<_, ExpenseEntry>(
             r#"SELECT uid, price, product, created_by, group_uid, category_uid, created_at, updated_at
                FROM expense_entries WHERE uid = $1"#
         )
         .bind(uid)
-        .fetch_one(db_pool)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(rec)
     }
 
     pub async fn update(
-        db_pool: &sqlx::PgPool,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         uid: Uuid,
         payload: UpdateExpenseEntryPayload,
     ) -> Result<ExpenseEntry, DatabaseError> {
-        let current = Self::get(db_pool, uid).await?;
+        let current = Self::get(tx, uid).await?;
         let price = payload.price.unwrap_or(current.price);
         let product = payload.product.unwrap_or(current.product);
         let category_uid = payload.category_uid.unwrap_or(current.category_uid);
@@ -118,14 +118,14 @@ impl ExpenseEntryRepo {
         .bind(product)
         .bind(category_uid)
         .bind(uid)
-        .fetch_one(db_pool)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(rec)
     }
 
-    pub async fn delete(db_pool: &sqlx::PgPool, uid: Uuid) -> Result<(), DatabaseError> {
+    pub async fn delete(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, uid: Uuid) -> Result<(), DatabaseError> {
         sqlx::query("DELETE FROM expense_entries WHERE uid = $1").bind(uid)
-            .execute(db_pool)
+            .execute(&mut *tx)
             .await?;
         Ok(())
     }

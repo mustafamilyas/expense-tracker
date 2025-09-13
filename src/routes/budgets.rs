@@ -13,12 +13,18 @@ pub fn router() -> axum::Router<AppState> {
 
 #[utoipa::path(get, path = "/budgets", responses((status = 200, body = [Budget])), tag = "Budgets")]
 pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Budget>>, AppError> {
-    Ok(Json(BudgetRepo::list(&state.db_pool).await?))
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+    let res = BudgetRepo::list(&mut tx).await?;
+    tx.commit().await.map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+    Ok(Json(res))
 }
 
 #[utoipa::path(get, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = Budget)), tag = "Budgets")]
 pub async fn get(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<Json<Budget>, AppError> {
-    Ok(Json(BudgetRepo::get(&state.db_pool, uid).await?))
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+    let res = BudgetRepo::get(&mut tx, uid).await?;
+    tx.commit().await.map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+    Ok(Json(res))
 }
 
 #[derive(Deserialize, ToSchema)]
@@ -26,13 +32,15 @@ pub struct CreatePayload { pub group_uid: Uuid, pub category_uid: Uuid, pub amou
 
 #[utoipa::path(post, path = "/budgets", request_body = CreatePayload, responses((status = 200, body = Budget)), tag = "Budgets")]
 pub async fn create(State(state): State<AppState>, Json(payload): Json<CreatePayload>) -> Result<Json<Budget>, AppError> {
-    let created = BudgetRepo::create(&state.db_pool, CreateBudgetPayload {
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+    let created = BudgetRepo::create(&mut tx, CreateBudgetPayload {
         group_uid: payload.group_uid,
         category_uid: payload.category_uid,
         amount: payload.amount,
         period_year: payload.period_year,
         period_month: payload.period_month,
     }).await?;
+    tx.commit().await.map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
     Ok(Json(created))
 }
 
@@ -41,12 +49,16 @@ pub struct UpdatePayload { pub amount: Option<f64>, pub period_year: Option<i32>
 
 #[utoipa::path(put, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), request_body = UpdatePayload, responses((status = 200, body = Budget)), tag = "Budgets")]
 pub async fn update(State(state): State<AppState>, Path(uid): Path<Uuid>, Json(payload): Json<UpdatePayload>) -> Result<Json<Budget>, AppError> {
-    let updated = BudgetRepo::update(&state.db_pool, uid, UpdateBudgetPayload { amount: payload.amount, period_year: payload.period_year, period_month: payload.period_month }).await?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+    let updated = BudgetRepo::update(&mut tx, uid, UpdateBudgetPayload { amount: payload.amount, period_year: payload.period_year, period_month: payload.period_month }).await?;
+    tx.commit().await.map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
     Ok(Json(updated))
 }
 
 #[utoipa::path(delete, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Budgets")]
 pub async fn delete_(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<(), AppError> {
-    BudgetRepo::delete(&state.db_pool, uid).await?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+    BudgetRepo::delete(&mut tx, uid).await?;
+    tx.commit().await.map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
     Ok(())
 }

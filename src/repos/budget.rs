@@ -34,27 +34,27 @@ pub struct UpdateBudgetPayload {
 pub struct BudgetRepo;
 
 impl BudgetRepo {
-    pub async fn list(db: &sqlx::PgPool) -> Result<Vec<Budget>, DatabaseError> {
+    pub async fn list(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>) -> Result<Vec<Budget>, DatabaseError> {
         let rows = sqlx::query_as::<_, Budget>(
             r#"SELECT uid, group_uid, category_uid, amount, period_year, period_month FROM budgets
                ORDER BY group_uid, category_uid"#
         )
-        .fetch_all(db)
+        .fetch_all(&mut *tx)
         .await?;
         Ok(rows)
     }
 
-    pub async fn get(db: &sqlx::PgPool, uid: Uuid) -> Result<Budget, DatabaseError> {
+    pub async fn get(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, uid: Uuid) -> Result<Budget, DatabaseError> {
         let row = sqlx::query_as::<_, Budget>(
             r#"SELECT uid, group_uid, category_uid, amount, period_year, period_month FROM budgets WHERE uid = $1"#
         )
         .bind(uid)
-        .fetch_one(db)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(row)
     }
 
-    pub async fn create(db: &sqlx::PgPool, payload: CreateBudgetPayload) -> Result<Budget, DatabaseError> {
+    pub async fn create(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, payload: CreateBudgetPayload) -> Result<Budget, DatabaseError> {
         let uid = Uuid::new_v4();
         let row = sqlx::query_as::<_, Budget>(
             r#"INSERT INTO budgets (uid, group_uid, category_uid, amount, period_year, period_month)
@@ -67,13 +67,13 @@ impl BudgetRepo {
         .bind(payload.amount)
         .bind(payload.period_year)
         .bind(payload.period_month)
-        .fetch_one(db)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(row)
     }
 
-    pub async fn update(db: &sqlx::PgPool, uid: Uuid, payload: UpdateBudgetPayload) -> Result<Budget, DatabaseError> {
-        let current = Self::get(db, uid).await?;
+    pub async fn update(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, uid: Uuid, payload: UpdateBudgetPayload) -> Result<Budget, DatabaseError> {
+        let current = Self::get(tx, uid).await?;
         let amount = payload.amount.unwrap_or(current.amount);
         let period_year = payload.period_year.or(current.period_year);
         let period_month = payload.period_month.or(current.period_month);
@@ -85,14 +85,14 @@ impl BudgetRepo {
         .bind(period_year)
         .bind(period_month)
         .bind(uid)
-        .fetch_one(db)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(row)
     }
 
-    pub async fn delete(db: &sqlx::PgPool, uid: Uuid) -> Result<(), DatabaseError> {
+    pub async fn delete(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, uid: Uuid) -> Result<(), DatabaseError> {
         sqlx::query("DELETE FROM budgets WHERE uid = $1").bind(uid)
-            .execute(db)
+            .execute(&mut *tx)
             .await?;
         Ok(())
     }

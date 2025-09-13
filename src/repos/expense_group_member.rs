@@ -30,26 +30,26 @@ pub struct UpdateGroupMemberPayload {
 pub struct GroupMemberRepo;
 
 impl GroupMemberRepo {
-    pub async fn list(db: &sqlx::PgPool) -> Result<Vec<GroupMember>, DatabaseError> {
+    pub async fn list(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>) -> Result<Vec<GroupMember>, DatabaseError> {
         let rows = sqlx::query_as::<_, GroupMember>(
             r#"SELECT id, group_uid, user_uid, role, created_at FROM group_members ORDER BY created_at DESC"#
         )
-        .fetch_all(db)
+        .fetch_all(&mut *tx)
         .await?;
         Ok(rows)
     }
 
-    pub async fn get(db: &sqlx::PgPool, id: Uuid) -> Result<GroupMember, DatabaseError> {
+    pub async fn get(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, id: Uuid) -> Result<GroupMember, DatabaseError> {
         let row = sqlx::query_as::<_, GroupMember>(
             r#"SELECT id, group_uid, user_uid, role, created_at FROM group_members WHERE id = $1"#
         )
         .bind(id)
-        .fetch_one(db)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(row)
     }
 
-    pub async fn create(db: &sqlx::PgPool, payload: CreateGroupMemberPayload) -> Result<GroupMember, DatabaseError> {
+    pub async fn create(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, payload: CreateGroupMemberPayload) -> Result<GroupMember, DatabaseError> {
         let id = Uuid::new_v4();
         let row = sqlx::query_as::<_, GroupMember>(
             r#"INSERT INTO group_members (id, group_uid, user_uid, role)
@@ -60,13 +60,13 @@ impl GroupMemberRepo {
         .bind(payload.group_uid)
         .bind(payload.user_uid)
         .bind(payload.role)
-        .fetch_one(db)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(row)
     }
 
-    pub async fn update(db: &sqlx::PgPool, id: Uuid, payload: UpdateGroupMemberPayload) -> Result<GroupMember, DatabaseError> {
-        let current = Self::get(db, id).await?;
+    pub async fn update(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, id: Uuid, payload: UpdateGroupMemberPayload) -> Result<GroupMember, DatabaseError> {
+        let current = Self::get(tx, id).await?;
         let role = payload.role.unwrap_or(current.role);
         let row = sqlx::query_as::<_, GroupMember>(
             r#"UPDATE group_members SET role = $1 WHERE id = $2
@@ -74,14 +74,14 @@ impl GroupMemberRepo {
         )
         .bind(role)
         .bind(id)
-        .fetch_one(db)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(row)
     }
 
-    pub async fn delete(db: &sqlx::PgPool, id: Uuid) -> Result<(), DatabaseError> {
+    pub async fn delete(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, id: Uuid) -> Result<(), DatabaseError> {
         sqlx::query("DELETE FROM group_members WHERE id = $1").bind(id)
-            .execute(db)
+            .execute(&mut *tx)
             .await?;
         Ok(())
     }

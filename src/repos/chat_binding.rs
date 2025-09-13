@@ -36,28 +36,28 @@ pub struct UpdateChatBindingPayload {
 pub struct ChatBindingRepo;
 
 impl ChatBindingRepo {
-    pub async fn list(db: &sqlx::PgPool) -> Result<Vec<ChatBinding>, DatabaseError> {
+    pub async fn list(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>) -> Result<Vec<ChatBinding>, DatabaseError> {
         let rows = sqlx::query_as::<_, ChatBinding>(
             r#"SELECT id, group_uid, platform::text as platform, p_uid, status::text as status, bound_by, bound_at, revoked_at
                FROM chat_bindings ORDER BY bound_at DESC"#
         )
-        .fetch_all(db)
+        .fetch_all(&mut *tx)
         .await?;
         Ok(rows)
     }
 
-    pub async fn get(db: &sqlx::PgPool, id: Uuid) -> Result<ChatBinding, DatabaseError> {
+    pub async fn get(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, id: Uuid) -> Result<ChatBinding, DatabaseError> {
         let row = sqlx::query_as::<_, ChatBinding>(
             r#"SELECT id, group_uid, platform::text as platform, p_uid, status::text as status, bound_by, bound_at, revoked_at
                FROM chat_bindings WHERE id = $1"#
         )
         .bind(id)
-        .fetch_one(db)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(row)
     }
 
-    pub async fn create(db: &sqlx::PgPool, payload: CreateChatBindingPayload) -> Result<ChatBinding, DatabaseError> {
+    pub async fn create(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, payload: CreateChatBindingPayload) -> Result<ChatBinding, DatabaseError> {
         let id = Uuid::new_v4();
         let row = sqlx::query_as::<_, ChatBinding>(
             r#"INSERT INTO chat_bindings (id, group_uid, platform, p_uid, status, bound_by)
@@ -70,13 +70,13 @@ impl ChatBindingRepo {
         .bind(payload.p_uid)
         .bind(payload.status)
         .bind(payload.bound_by)
-        .fetch_one(db)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(row)
     }
 
-    pub async fn update(db: &sqlx::PgPool, id: Uuid, payload: UpdateChatBindingPayload) -> Result<ChatBinding, DatabaseError> {
-        let current = Self::get(db, id).await?;
+    pub async fn update(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, id: Uuid, payload: UpdateChatBindingPayload) -> Result<ChatBinding, DatabaseError> {
+        let current = Self::get(tx, id).await?;
         let status = payload.status.unwrap_or(current.status);
         let revoked_at = match payload.revoked_at { Some(v) => v, None => current.revoked_at };
         let row = sqlx::query_as::<_, ChatBinding>(
@@ -86,14 +86,14 @@ impl ChatBindingRepo {
         .bind(status)
         .bind(revoked_at)
         .bind(id)
-        .fetch_one(db)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(row)
     }
 
-    pub async fn delete(db: &sqlx::PgPool, id: Uuid) -> Result<(), DatabaseError> {
+    pub async fn delete(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, id: Uuid) -> Result<(), DatabaseError> {
         sqlx::query("DELETE FROM chat_bindings WHERE id = $1").bind(id)
-            .execute(db)
+            .execute(&mut *tx)
             .await?;
         Ok(())
     }
