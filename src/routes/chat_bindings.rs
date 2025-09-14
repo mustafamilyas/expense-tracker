@@ -3,7 +3,7 @@ use serde::Deserialize;
 use uuid::Uuid;
 use utoipa::ToSchema;
 
-use crate::{error::app::AppError, repos::chat_binding::{ChatBinding, ChatBindingRepo, CreateChatBindingPayload, UpdateChatBindingPayload}, types::AppState};
+use crate::{error::AppError, repos::chat_binding::{ChatBinding, ChatBindingRepo, CreateChatBindingPayload, UpdateChatBindingPayload}, types::AppState};
 
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()

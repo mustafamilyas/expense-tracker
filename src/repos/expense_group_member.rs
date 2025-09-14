@@ -4,7 +4,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 use utoipa::ToSchema;
 
-use crate::error::db::DatabaseError;
+use crate::error::DatabaseError;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct GroupMember {
@@ -34,7 +34,7 @@ impl GroupMemberRepo {
         let rows = sqlx::query_as::<_, GroupMember>(
             r#"SELECT id, group_uid, user_uid, role, created_at FROM group_members ORDER BY created_at DESC"#
         )
-        .fetch_all(&mut *tx)
+        .fetch_all(tx.as_mut())
         .await?;
         Ok(rows)
     }
@@ -44,7 +44,7 @@ impl GroupMemberRepo {
             r#"SELECT id, group_uid, user_uid, role, created_at FROM group_members WHERE id = $1"#
         )
         .bind(id)
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(row)
     }
@@ -60,7 +60,7 @@ impl GroupMemberRepo {
         .bind(payload.group_uid)
         .bind(payload.user_uid)
         .bind(payload.role)
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(row)
     }
@@ -74,14 +74,14 @@ impl GroupMemberRepo {
         )
         .bind(role)
         .bind(id)
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(row)
     }
 
     pub async fn delete(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, id: Uuid) -> Result<(), DatabaseError> {
         sqlx::query("DELETE FROM group_members WHERE id = $1").bind(id)
-            .execute(&mut *tx)
+            .execute(tx.as_mut())
             .await?;
         Ok(())
     }

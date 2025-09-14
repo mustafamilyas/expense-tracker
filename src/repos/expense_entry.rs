@@ -1,10 +1,10 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use uuid::Uuid;
 use utoipa::ToSchema;
+use uuid::Uuid;
 
-use crate::error::db::DatabaseError;
+use crate::error::DatabaseError;
 
 pub struct ExpenseEntryRepo;
 
@@ -73,28 +73,33 @@ impl ExpenseEntryRepo {
         .bind(payload.group_uid)
         .bind(payload.category_uid)
         .bind("system")
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(rec)
     }
 
-    pub async fn list(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>) -> Result<Vec<ExpenseEntry>, DatabaseError> {
+    pub async fn list(
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    ) -> Result<Vec<ExpenseEntry>, DatabaseError> {
         let recs = sqlx::query_as::<_, ExpenseEntry>(
             r#"SELECT uid, price, product, created_by, group_uid, category_uid, created_at, updated_at
                FROM expense_entries ORDER BY created_at DESC"#
         )
-        .fetch_all(&mut *tx)
+        .fetch_all(tx.as_mut())
         .await?;
         Ok(recs)
     }
 
-    pub async fn get(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, uid: Uuid) -> Result<ExpenseEntry, DatabaseError> {
+    pub async fn get(
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        uid: Uuid,
+    ) -> Result<ExpenseEntry, DatabaseError> {
         let rec = sqlx::query_as::<_, ExpenseEntry>(
             r#"SELECT uid, price, product, created_by, group_uid, category_uid, created_at, updated_at
                FROM expense_entries WHERE uid = $1"#
         )
         .bind(uid)
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(rec)
     }
@@ -118,14 +123,18 @@ impl ExpenseEntryRepo {
         .bind(product)
         .bind(category_uid)
         .bind(uid)
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(rec)
     }
 
-    pub async fn delete(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, uid: Uuid) -> Result<(), DatabaseError> {
-        sqlx::query("DELETE FROM expense_entries WHERE uid = $1").bind(uid)
-            .execute(&mut *tx)
+    pub async fn delete(
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        uid: Uuid,
+    ) -> Result<(), DatabaseError> {
+        sqlx::query("DELETE FROM expense_entries WHERE uid = $1")
+            .bind(uid)
+            .execute(tx.as_mut())
             .await?;
         Ok(())
     }

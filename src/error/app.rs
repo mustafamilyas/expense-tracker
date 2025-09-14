@@ -1,7 +1,7 @@
 use axum::{http::StatusCode, response::{IntoResponse, Response}};
 use thiserror::Error;
 
-use crate::error::db::DatabaseError;
+use crate::error::DatabaseError;
 
 #[derive(Debug, Error)]
 pub enum AppError {

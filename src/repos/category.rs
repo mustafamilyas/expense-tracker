@@ -4,7 +4,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 use utoipa::ToSchema;
 
-use crate::error::db::DatabaseError;
+use crate::error::DatabaseError;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct Category {
@@ -36,7 +36,7 @@ impl CategoryRepo {
         let rows = sqlx::query_as::<_, Category>(
             r#"SELECT uid, group_uid, name, description, created_at, updated_at FROM categories ORDER BY created_at DESC"#
         )
-        .fetch_all(&mut *tx)
+        .fetch_all(tx.as_mut())
         .await?;
         Ok(rows)
     }
@@ -46,7 +46,7 @@ impl CategoryRepo {
             r#"SELECT uid, group_uid, name, description, created_at, updated_at FROM categories WHERE uid = $1"#
         )
         .bind(uid)
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(row)
     }
@@ -62,7 +62,7 @@ impl CategoryRepo {
         .bind(payload.group_uid)
         .bind(payload.name)
         .bind(payload.description)
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(row)
     }
@@ -78,14 +78,14 @@ impl CategoryRepo {
         .bind(name)
         .bind(description)
         .bind(uid)
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(row)
     }
 
     pub async fn delete(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, uid: Uuid) -> Result<(), DatabaseError> {
         sqlx::query("DELETE FROM categories WHERE uid = $1").bind(uid)
-            .execute(&mut *tx)
+            .execute(tx.as_mut())
             .await?;
         Ok(())
     }

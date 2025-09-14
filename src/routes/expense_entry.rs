@@ -1,36 +1,43 @@
-
-use axum::{extract::{Path, State}, Json};
-use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
+use axum::{
+    Json,
+    extract::{Path, State},
+};
+use chrono::Utc;
+use serde::Deserialize;
 use tracing::info;
-use uuid::Uuid;
-use chrono::{DateTime, Utc};
 use utoipa::ToSchema;
+use uuid::Uuid;
 
-use crate::{error::app::AppError, repos::expense_entry::ExpenseEntry, types::AppState};
-
-
+use crate::{error::AppError, repos::expense_entry::ExpenseEntry, types::AppState};
 
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
-        .route("/", axum::routing::get(list_expense_entries).post(create_expense_entry))
-        .route("/{uid}", axum::routing::get(get_expense_entry).put(update_expense_entry).delete(delete_expense_entry))
+        .route(
+            "/",
+            axum::routing::get(list_expense_entries).post(create_expense_entry),
+        )
+        .route(
+            "/{uid}",
+            axum::routing::get(get_expense_entry)
+                .put(update_expense_entry)
+                .delete(delete_expense_entry),
+        )
 }
 
 #[utoipa::path(get, path = "/expense-entries", responses((status = 200, body = [ExpenseEntry])), tag = "Expense Entries")]
 pub async fn list_expense_entries(
-    State(state): State<AppState>
+    State(state): State<AppState>,
 ) -> Result<Json<Vec<ExpenseEntry>>, AppError> {
     let db_pool = &state.db_pool;
     let rows = sqlx::query_as(
         r#"
         SELECT uid, price, product, group_uid, category_uid, created_at, updated_at
         FROM expense_entries
-        "#
-    )    .fetch_all(db_pool)
-    .await.map_err(
-        |e| AppError::Internal(anyhow::anyhow!(e))
-    )?;
+        "#,
+    )
+    .fetch_all(db_pool)
+    .await
+    .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
     Ok(Json(rows))
 }
 
@@ -43,7 +50,10 @@ pub struct CreateExpenseEntryPayload {
 }
 
 #[utoipa::path(post, path = "/expense-entries", request_body = CreateExpenseEntryPayload, responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries")]
-pub async fn create_expense_entry(State(state): State<AppState>, Json(payload): Json<CreateExpenseEntryPayload>) -> Result<Json<ExpenseEntry>, AppError> {
+pub async fn create_expense_entry(
+    State(state): State<AppState>,
+    Json(payload): Json<CreateExpenseEntryPayload>,
+) -> Result<Json<ExpenseEntry>, AppError> {
     let db_pool = &state.db_pool;
     let entry = ExpenseEntry {
         uid: Uuid::now_v7(),
@@ -92,9 +102,3 @@ pub async fn delete_expense_entry(Path(uid): Path<Uuid>) -> Result<(), AppError>
     info!("Deleting expense entry with uid: {}", uid);
     Ok(())
 }
-
-
-
-
-
-

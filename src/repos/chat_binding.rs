@@ -4,7 +4,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 use utoipa::ToSchema;
 
-use crate::error::db::DatabaseError;
+use crate::error::DatabaseError;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct ChatBinding {
@@ -41,7 +41,7 @@ impl ChatBindingRepo {
             r#"SELECT id, group_uid, platform::text as platform, p_uid, status::text as status, bound_by, bound_at, revoked_at
                FROM chat_bindings ORDER BY bound_at DESC"#
         )
-        .fetch_all(&mut *tx)
+        .fetch_all(tx.as_mut())
         .await?;
         Ok(rows)
     }
@@ -52,7 +52,7 @@ impl ChatBindingRepo {
                FROM chat_bindings WHERE id = $1"#
         )
         .bind(id)
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(row)
     }
@@ -70,7 +70,7 @@ impl ChatBindingRepo {
         .bind(payload.p_uid)
         .bind(payload.status)
         .bind(payload.bound_by)
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(row)
     }
@@ -86,14 +86,14 @@ impl ChatBindingRepo {
         .bind(status)
         .bind(revoked_at)
         .bind(id)
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(row)
     }
 
     pub async fn delete(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, id: Uuid) -> Result<(), DatabaseError> {
         sqlx::query("DELETE FROM chat_bindings WHERE id = $1").bind(id)
-            .execute(&mut *tx)
+            .execute(tx.as_mut())
             .await?;
         Ok(())
     }

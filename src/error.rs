@@ -1,2 +1,5 @@
-pub mod app;
-pub mod db;
+mod app;
+mod db;
+
+pub use app::AppError;
+pub use db::DatabaseError;

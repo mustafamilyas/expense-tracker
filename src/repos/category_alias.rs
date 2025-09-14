@@ -3,7 +3,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 use utoipa::ToSchema;
 
-use crate::error::db::DatabaseError;
+use crate::error::DatabaseError;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct CategoryAlias {
@@ -33,7 +33,7 @@ impl CategoryAliasRepo {
         let rows = sqlx::query_as::<_, CategoryAlias>(
             r#"SELECT alias_uid, group_uid, alias, category_uid FROM categories_aliases ORDER BY alias"#
         )
-        .fetch_all(&mut *tx)
+        .fetch_all(tx.as_mut())
         .await?;
         Ok(rows)
     }
@@ -43,7 +43,7 @@ impl CategoryAliasRepo {
             r#"SELECT alias_uid, group_uid, alias, category_uid FROM categories_aliases WHERE alias_uid = $1"#
         )
         .bind(alias_uid)
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(row)
     }
@@ -59,7 +59,7 @@ impl CategoryAliasRepo {
         .bind(payload.group_uid)
         .bind(payload.alias)
         .bind(payload.category_uid)
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(row)
     }
@@ -75,14 +75,14 @@ impl CategoryAliasRepo {
         .bind(alias)
         .bind(category_uid)
         .bind(alias_uid)
-        .fetch_one(&mut *tx)
+        .fetch_one(tx.as_mut())
         .await?;
         Ok(row)
     }
 
     pub async fn delete(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, alias_uid: Uuid) -> Result<(), DatabaseError> {
         sqlx::query("DELETE FROM categories_aliases WHERE alias_uid = $1").bind(alias_uid)
-            .execute(&mut *tx)
+            .execute(tx.as_mut())
             .await?;
         Ok(())
     }
