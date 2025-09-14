@@ -3,6 +3,7 @@ use axum::{
     extract::{Path, State},
 };
 use serde::Deserialize;
+use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -23,6 +24,7 @@ pub fn router() -> axum::Router<AppState> {
 
 #[utoipa::path(get, path = "/budgets", responses((status = 200, body = [Budget])), tag = "Budgets")]
 pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Budget>>, AppError> {
+    info!("Listing budgets");
     let mut tx = state
         .db_pool
         .begin()

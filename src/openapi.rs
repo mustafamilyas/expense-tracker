@@ -1,9 +1,6 @@
 use utoipa::OpenApi;
 
-use crate::{
-    repos as repo,
-    routes,
-};
+use crate::{repos as repo, routes, types};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -12,7 +9,6 @@ use crate::{
         routes::users::get_user,
         routes::users::create_user,
         routes::users::update_user,
-        routes::users::delete_user,
         routes::users::login_user,
 
         routes::expense_entry::list_expense_entries,
@@ -69,6 +65,7 @@ use crate::{
     components(schemas(
         // Repo models
         repo::user::User,
+        repo::user::UserRead,
         repo::expense_group::ExpenseGroup,
         repo::category::Category,
         repo::category_alias::CategoryAlias,
@@ -78,7 +75,6 @@ use crate::{
         repo::chat_binding::ChatBinding,
         repo::expense_group_member::GroupMember,
         // Route models
-        routes::users::UserRead,
         routes::users::CreateUserPayload,
         routes::users::UpdateUserPayload,
         routes::users::LoginUserPayload,
@@ -98,6 +94,8 @@ use crate::{
         routes::group_members::CreatePayload,
         routes::group_members::UpdatePayload,
         routes::version::VersionBody,
+        // Common models
+        types::DeleteResponse,
     )),
     tags(
         (name = "Users"),

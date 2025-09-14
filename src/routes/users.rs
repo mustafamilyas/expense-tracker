@@ -6,47 +6,36 @@ use axum::{
     Json,
     extract::{Path, State},
 };
-use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
-use tracing::info;
+use serde::Deserialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{error::AppError, repos::user::User, types::AppState};
+use crate::{
+    error::AppError,
+    repos::{
+        expense_group::{CreateExpenseGroupPayload, ExpenseGroupRepo},
+        user::{CreateUserDbPayload, UserRead, UserRepo},
+    },
+    types::AppState,
+};
 
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
         .route("/users", axum::routing::get(list_users))
         .route(
             "/users/{uid}",
-            axum::routing::get(get_user)
-                .put(update_user)
-                .delete(delete_user),
+            axum::routing::get(get_user).put(update_user),
         )
-        .route("/register", axum::routing::post(create_user))
-        .route("/login", axum::routing::post(login_user))
-}
-
-#[derive(Debug, Serialize, Deserialize, FromRow, ToSchema)]
-pub struct UserRead {
-    pub uid: Uuid,
-    pub email: String,
-    pub start_over_date: i16,
+        .route("/auth/register", axum::routing::post(create_user))
+        .route("/auth/login", axum::routing::post(login_user))
 }
 
 #[utoipa::path(get, path = "/users", responses((status = 200, body = [UserRead])), tag = "Users")]
 pub async fn list_users(State(state): State<AppState>) -> Result<Json<Vec<UserRead>>, AppError> {
-    let db_pool = &state.db_pool;
-    let rows = sqlx::query_as(
-        r#"
-        SELECT uid, email, start_over_date
-        FROM users
-        "#,
-    )
-    .fetch_all(db_pool)
-    .await
-    .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
-    Ok(Json(rows))
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let res = UserRepo::list(&mut tx).await?;
+    tx.commit().await.map_err(|e| AppError::from(e))?;
+    Ok(Json(res))
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -56,37 +45,41 @@ pub struct CreateUserPayload {
     pub start_over_date: i16,
 }
 
-#[utoipa::path(post, path = "/register", request_body = CreateUserPayload, responses((status = 200, body = UserRead)), tag = "Users")]
+#[utoipa::path(post, path = "/auth/register", request_body = CreateUserPayload, responses((status = 200, body = UserRead)), tag = "Users")]
 pub async fn create_user(
     State(state): State<AppState>,
     Json(payload): Json<CreateUserPayload>,
 ) -> Result<Json<UserRead>, AppError> {
-    let db_pool = &state.db_pool;
     let salt = SaltString::generate(&mut OsRng);
     let phash = argon2::Argon2::default()
         .hash_password(payload.password.as_bytes(), &salt)
         .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?
         .to_string();
-    let uid = Uuid::new_v4();
 
-    let _res = sqlx::query(
-        r#"
-        INSERT INTO users (uid, email, phash, start_over_date)
-        VALUES ($1, $2, $3, $4)
-        "#,
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let user = UserRepo::create(
+        &mut tx,
+        CreateUserDbPayload {
+            email: payload.email.clone(),
+            phash,
+            start_over_date: payload.start_over_date,
+        },
     )
-    .bind(uid)
-    .bind(&payload.email)
-    .bind(&phash)
-    .bind(payload.start_over_date)
-    .execute(db_pool)
-    .await
-    .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+    .await?;
 
-    // Create default expense groups for the new user
+    let _ = ExpenseGroupRepo::create(
+        &mut tx,
+        CreateExpenseGroupPayload {
+            name: "Default".to_string(),
+            owner: user.uid,
+        },
+    )
+    .await?;
+
+    tx.commit().await.map_err(|e| AppError::from(e))?;
 
     Ok(Json(UserRead {
-        uid,
+        uid: user.uid,
         email: payload.email.clone(),
         start_over_date: payload.start_over_date,
     }))
@@ -97,18 +90,9 @@ pub async fn get_user(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
 ) -> Result<Json<UserRead>, AppError> {
-    info!("Fetching user with uid: {}", uid);
-    let user = sqlx::query_as(
-        r#"
-        SELECT uid, email, start_over_date
-        FROM users
-        WHERE uid = $1
-        "#,
-    )
-    .bind(uid)
-    .fetch_optional(&state.db_pool)
-    .await
-    .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let user = UserRepo::get(&mut tx, uid).await.ok();
+    tx.commit().await.map_err(|e| AppError::from(e))?;
 
     match user {
         Some(u) => Ok(Json(u)),
@@ -129,76 +113,31 @@ pub async fn update_user(
     Path(uid): Path<Uuid>,
     Json(payload): Json<UpdateUserPayload>,
 ) -> Result<Json<UserRead>, AppError> {
-    info!("Updating user with uid: {}", uid);
-    let user: User = sqlx::query_as(
-        r#"
-        SELECT uid, email, start_over_date, phash, created_at
-        FROM users
-        WHERE uid = $1
-        "#,
-    )
-    .bind(uid)
-    .fetch_one(&state.db_pool)
-    .await
-    .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
-
-    let email = payload.email.unwrap_or(user.email);
-    let start_over_date = payload.start_over_date.unwrap_or(user.start_over_date);
-    let phash = if let Some(password) = payload.password {
-        let salt = SaltString::generate(&mut OsRng);
-        argon2::Argon2::default()
-            .hash_password(password.as_bytes(), &salt)
-            .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?
-            .to_string()
-    } else {
-        user.phash
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let new_phash = match &payload.password {
+        Some(pw) => {
+            let salt = SaltString::generate(&mut OsRng);
+            Some(
+                argon2::Argon2::default()
+                    .hash_password(pw.as_bytes(), &salt)
+                    .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?
+                    .to_string(),
+            )
+        }
+        None => None,
     };
-
-    let _res = sqlx::query(
-        r#"
-        UPDATE users
-        SET email = $1, phash = $2, start_over_date = $3
-        WHERE uid = $4
-        "#,
-    )
-    .bind(&email)
-    .bind(&phash)
-    .bind(start_over_date)
-    .bind(uid)
-    .execute(&state.db_pool)
-    .await
-    .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
-    let updated_user = UserRead {
+    let updated_user = UserRepo::update(
+        &mut tx,
         uid,
-        email,
-        start_over_date,
-    };
-
-    Ok(Json(updated_user))
-}
-
-#[derive(Serialize, ToSchema)]
-pub struct DeleteResponse {
-    success: bool,
-}
-
-#[utoipa::path(delete, path = "/users/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Users")]
-pub async fn delete_user(
-    State(state): State<AppState>,
-    Path(uid): Path<Uuid>,
-) -> Result<Json<DeleteResponse>, AppError> {
-    info!("Deleting user with uid: {}", uid);
-    let _ = sqlx::query(
-        r#"
-        DELETE FROM users
-        WHERE uid = $1
-        "#,
+        crate::repos::user::UpdateUserDbPayload {
+            email: payload.email,
+            phash: new_phash,
+            start_over_date: payload.start_over_date,
+        },
     )
-    .bind(uid)
-    .execute(&state.db_pool)
-    .await
-    .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
-    Ok(Json(DeleteResponse { success: true }))
+    .await?;
+    tx.commit().await.map_err(|e| AppError::from(e))?;
+    Ok(Json(updated_user))
 }
 
 #[derive(Deserialize, ToSchema)]
@@ -207,24 +146,16 @@ pub struct LoginUserPayload {
     pub password: String,
 }
 
-#[utoipa::path(post, path = "/login", request_body = LoginUserPayload, responses((status = 200, body = UserRead), (status = 401, description = "Unauthorized")), tag = "Users")]
+#[utoipa::path(post, path = "/auth/login", request_body = LoginUserPayload, responses((status = 200, body = UserRead), (status = 401, description = "Unauthorized")), tag = "Users")]
 pub async fn login_user(
     State(state): State<AppState>,
     Json(payload): Json<LoginUserPayload>,
 ) -> Result<Json<UserRead>, AppError> {
-    let user: User = sqlx::query_as(
-        r#"
-        SELECT uid, email, start_over_date, phash, created_at
-        FROM users
-        WHERE email = $1
-        "#,
-    )
-    .bind(&payload.email)
-    .fetch_one(&state.db_pool)
-    .await
-    .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
-
-    info!("User found: {:?}", user);
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let user = UserRepo::get_by_email(&mut tx, &payload.email)
+        .await
+        .map_err(|_| AppError::Unauthorized("Invalid email or password".into()))?;
+    tx.commit().await.map_err(|e| AppError::from(e))?;
 
     let phash =
         PasswordHash::new(&user.phash).map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
@@ -236,6 +167,7 @@ pub async fn login_user(
         return Err(AppError::Unauthorized("Invalid email or password".into()));
     }
 
+    // TODO: Generate and return a JWT or session token here for authenticated sessions
     Ok(Json(UserRead {
         uid: user.uid,
         email: user.email,

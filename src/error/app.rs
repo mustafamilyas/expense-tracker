@@ -1,4 +1,7 @@
-use axum::{http::StatusCode, response::{IntoResponse, Response}};
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
 use thiserror::Error;
 
 use crate::error::DatabaseError;
@@ -20,13 +23,11 @@ impl IntoResponse for AppError {
         match self {
             AppError::NotFound => (StatusCode::NOT_FOUND, "not found").into_response(),
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg).into_response(),
-            AppError::Internal(err) => {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("internal error: {}", err),
-                )
-                    .into_response()
-            }
+            AppError::Internal(err) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("internal error: {}", err),
+            )
+                .into_response(),
             AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg).into_response(),
         }
     }
@@ -39,5 +40,11 @@ impl From<DatabaseError> for AppError {
             DatabaseError::ConstraintViolation(msg) => AppError::BadRequest(msg),
             _ => AppError::Internal(err.into()),
         }
+    }
+}
+
+impl From<sqlx::Error> for AppError {
+    fn from(err: sqlx::Error) -> Self {
+        AppError::Internal(DatabaseError::from_sqlx_error(err, "Database operation failed").into())
     }
 }

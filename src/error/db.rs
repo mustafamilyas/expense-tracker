@@ -3,7 +3,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum DatabaseError {
     #[error("Connection error: {0}")]
-    ConnectionError(#[from] sqlx::Error),
+    ConnectionError(sqlx::Error),
 
     #[error("Migration error: {0}")]
     MigrationError(sqlx::migrate::MigrateError),
@@ -45,8 +45,14 @@ impl DatabaseError {
                 } else {
                     DatabaseError::ConnectionError(sqlx::Error::Database(db_error))
                 }
-            },
+            }
             _ => DatabaseError::ConnectionError(error),
         }
+    }
+}
+
+impl From<sqlx::Error> for DatabaseError {
+    fn from(err: sqlx::Error) -> Self {
+        DatabaseError::from_sqlx_error(err, "Database operation failed")
     }
 }
