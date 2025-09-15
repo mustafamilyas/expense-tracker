@@ -2,13 +2,18 @@ use axum::{
     Json,
     extract::{Path, State},
 };
-use chrono::Utc;
 use serde::Deserialize;
-use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{error::AppError, repos::expense_entry::ExpenseEntry, types::AppState};
+use crate::{
+    error::AppError,
+    repos::expense_entry::{
+        CreateExpenseEntryPayload as CreateDbPayload, ExpenseEntry, ExpenseEntryRepo,
+        UpdateExpenseEntryPayload as UpdateDbPayload,
+    },
+    types::AppState,
+};
 
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
@@ -28,17 +33,10 @@ pub fn router() -> axum::Router<AppState> {
 pub async fn list_expense_entries(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<ExpenseEntry>>, AppError> {
-    let db_pool = &state.db_pool;
-    let rows = sqlx::query_as(
-        r#"
-        SELECT uid, price, product, group_uid, category_uid, created_at, updated_at
-        FROM expense_entries
-        "#,
-    )
-    .fetch_all(db_pool)
-    .await
-    .map_err(|e| AppError::from(e))?;
-    Ok(Json(rows))
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let res = ExpenseEntryRepo::list(&mut tx).await?;
+    tx.commit().await.map_err(|e| AppError::from(e))?;
+    Ok(Json(res))
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -54,51 +52,67 @@ pub async fn create_expense_entry(
     State(state): State<AppState>,
     Json(payload): Json<CreateExpenseEntryPayload>,
 ) -> Result<Json<ExpenseEntry>, AppError> {
-    let db_pool = &state.db_pool;
-    let entry = ExpenseEntry {
-        uid: Uuid::now_v7(),
-        price: payload.price,
-        product: payload.product,
-        group_uid: payload.group_uid,
-        category_uid: payload.category_uid,
-        created_by: "system".to_string(),
-        created_at: Utc::now(),
-        updated_at: Utc::now(),
-    };
-    sqlx::query(
-        r#"
-        INSERT INTO expense_entries (uid, price, product, group_uid, category_uid, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        "#,
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let created = ExpenseEntryRepo::create_expense_entry(
+        &mut tx,
+        CreateDbPayload {
+            price: payload.price,
+            product: payload.product,
+            group_uid: payload.group_uid,
+            category_uid: payload.category_uid,
+        },
     )
-    .bind(&entry.uid)
-    .bind(&entry.price)
-    .bind(&entry.product)
-    .bind(&entry.group_uid)
-    .bind(&entry.category_uid)
-    .bind(&entry.created_at)
-    .bind(&entry.updated_at)
-    .execute(db_pool)
-    .await.map_err(
-        |e| AppError::from(e)
-    )?;
-    Ok(Json(entry))
+    .await?;
+    tx.commit().await.map_err(|e| AppError::from(e))?;
+    Ok(Json(created))
 }
 
 #[utoipa::path(get, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "getExpenseEntry")]
-pub async fn get_expense_entry(Path(uid): Path<Uuid>) -> Result<Json<ExpenseEntry>, AppError> {
-    info!("Fetching expense entry with uid: {}", uid);
-    Ok(Json(ExpenseEntry::new()))
+pub async fn get_expense_entry(
+    State(state): State<AppState>,
+    Path(uid): Path<Uuid>,
+) -> Result<Json<ExpenseEntry>, AppError> {
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let rec = ExpenseEntryRepo::get(&mut tx, uid).await?;
+    tx.commit().await.map_err(|e| AppError::from(e))?;
+    Ok(Json(rec))
 }
 
-#[utoipa::path(put, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "updateExpenseEntry")]
-pub async fn update_expense_entry(Path(uid): Path<Uuid>) -> Result<Json<ExpenseEntry>, AppError> {
-    info!("Updating expense entry with uid: {}", uid);
-    Ok(Json(ExpenseEntry::new()))
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UpdateExpenseEntryPayload {
+    pub price: Option<f64>,
+    pub product: Option<String>,
+    pub category_uid: Option<Uuid>,
+}
+
+#[utoipa::path(put, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), request_body = UpdateExpenseEntryPayload, responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "updateExpenseEntry")]
+pub async fn update_expense_entry(
+    State(state): State<AppState>,
+    Path(uid): Path<Uuid>,
+    Json(payload): Json<UpdateExpenseEntryPayload>,
+) -> Result<Json<ExpenseEntry>, AppError> {
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let updated = ExpenseEntryRepo::update(
+        &mut tx,
+        uid,
+        UpdateDbPayload {
+            price: payload.price,
+            product: payload.product,
+            category_uid: payload.category_uid,
+        },
+    )
+    .await?;
+    tx.commit().await.map_err(|e| AppError::from(e))?;
+    Ok(Json(updated))
 }
 
 #[utoipa::path(delete, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Expense Entries", operation_id = "deleteExpenseEntry")]
-pub async fn delete_expense_entry(Path(uid): Path<Uuid>) -> Result<(), AppError> {
-    info!("Deleting expense entry with uid: {}", uid);
+pub async fn delete_expense_entry(
+    State(state): State<AppState>,
+    Path(uid): Path<Uuid>,
+) -> Result<(), AppError> {
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    ExpenseEntryRepo::delete(&mut tx, uid).await?;
+    tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(())
 }

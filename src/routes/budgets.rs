@@ -3,7 +3,6 @@ use axum::{
     extract::{Path, State},
 };
 use serde::Deserialize;
-use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -24,16 +23,9 @@ pub fn router() -> axum::Router<AppState> {
 
 #[utoipa::path(get, path = "/budgets", responses((status = 200, body = [Budget])), tag = "Budgets", operation_id = "listBudgets")]
 pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Budget>>, AppError> {
-    info!("Listing budgets");
-    let mut tx = state
-        .db_pool
-        .begin()
-        .await
-        .map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let res = BudgetRepo::list(&mut tx).await?;
-    tx.commit()
-        .await
-        .map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(Json(res))
 }
 
@@ -42,15 +34,9 @@ pub async fn get(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
 ) -> Result<Json<Budget>, AppError> {
-    let mut tx = state
-        .db_pool
-        .begin()
-        .await
-        .map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let res = BudgetRepo::get(&mut tx, uid).await?;
-    tx.commit()
-        .await
-        .map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(Json(res))
 }
 
@@ -68,11 +54,7 @@ pub async fn create(
     State(state): State<AppState>,
     Json(payload): Json<CreatePayload>,
 ) -> Result<Json<Budget>, AppError> {
-    let mut tx = state
-        .db_pool
-        .begin()
-        .await
-        .map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let created = BudgetRepo::create(
         &mut tx,
         CreateBudgetPayload {
@@ -84,9 +66,7 @@ pub async fn create(
         },
     )
     .await?;
-    tx.commit()
-        .await
-        .map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(Json(created))
 }
 
@@ -103,11 +83,7 @@ pub async fn update(
     Path(uid): Path<Uuid>,
     Json(payload): Json<UpdatePayload>,
 ) -> Result<Json<Budget>, AppError> {
-    let mut tx = state
-        .db_pool
-        .begin()
-        .await
-        .map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let updated = BudgetRepo::update(
         &mut tx,
         uid,
@@ -118,22 +94,14 @@ pub async fn update(
         },
     )
     .await?;
-    tx.commit()
-        .await
-        .map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(Json(updated))
 }
 
 #[utoipa::path(delete, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Budgets", operation_id = "deleteBudget")]
 pub async fn delete_(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<(), AppError> {
-    let mut tx = state
-        .db_pool
-        .begin()
-        .await
-        .map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     BudgetRepo::delete(&mut tx, uid).await?;
-    tx.commit()
-        .await
-        .map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(())
 }
