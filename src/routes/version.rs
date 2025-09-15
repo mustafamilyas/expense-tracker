@@ -10,7 +10,7 @@ pub struct VersionBody {
 }
 
 
-#[utoipa::path(get, path = "/version", responses((status = 200, body = VersionBody)), tag = "System")]
+#[utoipa::path(get, path = "/version", responses((status = 200, body = VersionBody)), tag = "System", operation_id = "getVersion")]
 pub async fn version(State(state): State<AppState>) -> Json<VersionBody> {
     Json(VersionBody { version: state.version.clone() })
 }

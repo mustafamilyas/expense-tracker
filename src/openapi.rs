@@ -70,6 +70,8 @@ use crate::{repos as repo, routes, types};
         repo::category::Category,
         repo::category_alias::CategoryAlias,
         repo::expense_entry::ExpenseEntry,
+        repo::expense_group::CreateExpenseGroupPayload,
+        repo::expense_group::UpdateExpenseGroupPayload,
         repo::budget::Budget,
         repo::chat_bind_request::ChatBindRequest,
         repo::chat_binding::ChatBinding,
@@ -79,8 +81,7 @@ use crate::{repos as repo, routes, types};
         routes::users::UpdateUserPayload,
         routes::users::LoginUserPayload,
         routes::expense_entry::CreateExpenseEntryPayload,
-        routes::expense_groups::CreatePayload,
-        routes::expense_groups::UpdatePayload,
+        
         routes::categories::CreatePayload,
         routes::categories::UpdatePayload,
         routes::categories_aliases::CreatePayload,

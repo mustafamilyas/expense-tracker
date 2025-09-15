@@ -22,22 +22,22 @@ pub fn router() -> axum::Router<AppState> {
         )
 }
 
-#[utoipa::path(get, path = "/budgets", responses((status = 200, body = [Budget])), tag = "Budgets")]
+#[utoipa::path(get, path = "/budgets", responses((status = 200, body = [Budget])), tag = "Budgets", operation_id = "listBudgets")]
 pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Budget>>, AppError> {
     info!("Listing budgets");
     let mut tx = state
         .db_pool
         .begin()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     let res = BudgetRepo::list(&mut tx).await?;
     tx.commit()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     Ok(Json(res))
 }
 
-#[utoipa::path(get, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = Budget)), tag = "Budgets")]
+#[utoipa::path(get, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = Budget)), tag = "Budgets", operation_id = "getBudget")]
 pub async fn get(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
@@ -46,11 +46,11 @@ pub async fn get(
         .db_pool
         .begin()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     let res = BudgetRepo::get(&mut tx, uid).await?;
     tx.commit()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     Ok(Json(res))
 }
 
@@ -63,7 +63,7 @@ pub struct CreatePayload {
     pub period_month: Option<i32>,
 }
 
-#[utoipa::path(post, path = "/budgets", request_body = CreatePayload, responses((status = 200, body = Budget)), tag = "Budgets")]
+#[utoipa::path(post, path = "/budgets", request_body = CreatePayload, responses((status = 200, body = Budget)), tag = "Budgets", operation_id = "createBudget")]
 pub async fn create(
     State(state): State<AppState>,
     Json(payload): Json<CreatePayload>,
@@ -72,7 +72,7 @@ pub async fn create(
         .db_pool
         .begin()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     let created = BudgetRepo::create(
         &mut tx,
         CreateBudgetPayload {
@@ -86,7 +86,7 @@ pub async fn create(
     .await?;
     tx.commit()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     Ok(Json(created))
 }
 
@@ -97,7 +97,7 @@ pub struct UpdatePayload {
     pub period_month: Option<i32>,
 }
 
-#[utoipa::path(put, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), request_body = UpdatePayload, responses((status = 200, body = Budget)), tag = "Budgets")]
+#[utoipa::path(put, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), request_body = UpdatePayload, responses((status = 200, body = Budget)), tag = "Budgets", operation_id = "updateBudget")]
 pub async fn update(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
@@ -107,7 +107,7 @@ pub async fn update(
         .db_pool
         .begin()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     let updated = BudgetRepo::update(
         &mut tx,
         uid,
@@ -120,20 +120,20 @@ pub async fn update(
     .await?;
     tx.commit()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     Ok(Json(updated))
 }
 
-#[utoipa::path(delete, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Budgets")]
+#[utoipa::path(delete, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Budgets", operation_id = "deleteBudget")]
 pub async fn delete_(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<(), AppError> {
     let mut tx = state
         .db_pool
         .begin()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     BudgetRepo::delete(&mut tx, uid).await?;
     tx.commit()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     Ok(())
 }

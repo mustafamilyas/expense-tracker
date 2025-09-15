@@ -14,13 +14,13 @@ pub struct ExpenseGroup {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateExpenseGroupPayload {
     pub name: String,
     pub owner: Uuid,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct UpdateExpenseGroupPayload {
     pub name: Option<String>,
 }

@@ -24,7 +24,7 @@ pub fn router() -> axum::Router<AppState> {
         )
 }
 
-#[utoipa::path(get, path = "/expense-entries", responses((status = 200, body = [ExpenseEntry])), tag = "Expense Entries")]
+#[utoipa::path(get, path = "/expense-entries", responses((status = 200, body = [ExpenseEntry])), tag = "Expense Entries", operation_id = "listExpenseEntries")]
 pub async fn list_expense_entries(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<ExpenseEntry>>, AppError> {
@@ -37,7 +37,7 @@ pub async fn list_expense_entries(
     )
     .fetch_all(db_pool)
     .await
-    .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+    .map_err(|e| AppError::from(e))?;
     Ok(Json(rows))
 }
 
@@ -49,7 +49,7 @@ pub struct CreateExpenseEntryPayload {
     pub category_uid: Uuid,
 }
 
-#[utoipa::path(post, path = "/expense-entries", request_body = CreateExpenseEntryPayload, responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries")]
+#[utoipa::path(post, path = "/expense-entries", request_body = CreateExpenseEntryPayload, responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "createExpenseEntry")]
 pub async fn create_expense_entry(
     State(state): State<AppState>,
     Json(payload): Json<CreateExpenseEntryPayload>,
@@ -80,24 +80,24 @@ pub async fn create_expense_entry(
     .bind(&entry.updated_at)
     .execute(db_pool)
     .await.map_err(
-        |e| AppError::Internal(anyhow::anyhow!(e))
+        |e| AppError::from(e)
     )?;
     Ok(Json(entry))
 }
 
-#[utoipa::path(get, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries")]
+#[utoipa::path(get, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "getExpenseEntry")]
 pub async fn get_expense_entry(Path(uid): Path<Uuid>) -> Result<Json<ExpenseEntry>, AppError> {
     info!("Fetching expense entry with uid: {}", uid);
     Ok(Json(ExpenseEntry::new()))
 }
 
-#[utoipa::path(put, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries")]
+#[utoipa::path(put, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "updateExpenseEntry")]
 pub async fn update_expense_entry(Path(uid): Path<Uuid>) -> Result<Json<ExpenseEntry>, AppError> {
     info!("Updating expense entry with uid: {}", uid);
     Ok(Json(ExpenseEntry::new()))
 }
 
-#[utoipa::path(delete, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Expense Entries")]
+#[utoipa::path(delete, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Expense Entries", operation_id = "deleteExpenseEntry")]
 pub async fn delete_expense_entry(Path(uid): Path<Uuid>) -> Result<(), AppError> {
     info!("Deleting expense entry with uid: {}", uid);
     Ok(())

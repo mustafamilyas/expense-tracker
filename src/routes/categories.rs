@@ -21,21 +21,21 @@ pub fn router() -> axum::Router<AppState> {
         )
 }
 
-#[utoipa::path(get, path = "/categories", responses((status = 200, body = [Category])), tag = "Categories")]
+#[utoipa::path(get, path = "/categories", responses((status = 200, body = [Category])), tag = "Categories", operation_id = "listCategories")]
 pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Category>>, AppError> {
     let mut tx = state
         .db_pool
         .begin()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     let res = CategoryRepo::list(&mut tx).await?;
     tx.commit()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     Ok(Json(res))
 }
 
-#[utoipa::path(get, path = "/categories/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = Category)), tag = "Categories")]
+#[utoipa::path(get, path = "/categories/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = Category)), tag = "Categories", operation_id = "getCategory")]
 pub async fn get(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
@@ -44,11 +44,11 @@ pub async fn get(
         .db_pool
         .begin()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     let res = CategoryRepo::get(&mut tx, uid).await?;
     tx.commit()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     Ok(Json(res))
 }
 
@@ -59,7 +59,7 @@ pub struct CreatePayload {
     pub description: Option<String>,
 }
 
-#[utoipa::path(post, path = "/categories", request_body = CreatePayload, responses((status = 200, body = Category)), tag = "Categories")]
+#[utoipa::path(post, path = "/categories", request_body = CreatePayload, responses((status = 200, body = Category)), tag = "Categories", operation_id = "createCategory")]
 pub async fn create(
     State(state): State<AppState>,
     Json(payload): Json<CreatePayload>,
@@ -68,7 +68,7 @@ pub async fn create(
         .db_pool
         .begin()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     let created = CategoryRepo::create(
         &mut tx,
         CreateCategoryPayload {
@@ -80,7 +80,7 @@ pub async fn create(
     .await?;
     tx.commit()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     Ok(Json(created))
 }
 
@@ -90,7 +90,7 @@ pub struct UpdatePayload {
     pub description: Option<String>,
 }
 
-#[utoipa::path(put, path = "/categories/{uid}", params(("uid" = Uuid, Path)), request_body = UpdatePayload, responses((status = 200, body = Category)), tag = "Categories")]
+#[utoipa::path(put, path = "/categories/{uid}", params(("uid" = Uuid, Path)), request_body = UpdatePayload, responses((status = 200, body = Category)), tag = "Categories", operation_id = "updateCategory")]
 pub async fn update(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
@@ -100,7 +100,7 @@ pub async fn update(
         .db_pool
         .begin()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     let updated = CategoryRepo::update(
         &mut tx,
         uid,
@@ -112,20 +112,20 @@ pub async fn update(
     .await?;
     tx.commit()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     Ok(Json(updated))
 }
 
-#[utoipa::path(delete, path = "/categories/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Categories")]
+#[utoipa::path(delete, path = "/categories/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Categories", operation_id = "deleteCategory")]
 pub async fn delete_(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<(), AppError> {
     let mut tx = state
         .db_pool
         .begin()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     CategoryRepo::delete(&mut tx, uid).await?;
     tx.commit()
         .await
-        .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;
+        .map_err(|e| AppError::from(e))?;
     Ok(())
 }

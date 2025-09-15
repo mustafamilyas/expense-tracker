@@ -30,7 +30,7 @@ pub fn router() -> axum::Router<AppState> {
         .route("/auth/login", axum::routing::post(login_user))
 }
 
-#[utoipa::path(get, path = "/users", responses((status = 200, body = [UserRead])), tag = "Users")]
+#[utoipa::path(get, path = "/users", responses((status = 200, body = [UserRead])), tag = "Users", operation_id = "listUsers")]
 pub async fn list_users(State(state): State<AppState>) -> Result<Json<Vec<UserRead>>, AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let res = UserRepo::list(&mut tx).await?;
@@ -45,7 +45,7 @@ pub struct CreateUserPayload {
     pub start_over_date: i16,
 }
 
-#[utoipa::path(post, path = "/auth/register", request_body = CreateUserPayload, responses((status = 200, body = UserRead)), tag = "Users")]
+#[utoipa::path(post, path = "/auth/register", request_body = CreateUserPayload, responses((status = 200, body = UserRead)), tag = "Users", operation_id = "createUser")]
 pub async fn create_user(
     State(state): State<AppState>,
     Json(payload): Json<CreateUserPayload>,
@@ -85,7 +85,7 @@ pub async fn create_user(
     }))
 }
 
-#[utoipa::path(get, path = "/users/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = UserRead), (status = 404, description = "Not found")), tag = "Users")]
+#[utoipa::path(get, path = "/users/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = UserRead), (status = 404, description = "Not found")), tag = "Users", operation_id = "getUser")]
 pub async fn get_user(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
@@ -107,7 +107,7 @@ pub struct UpdateUserPayload {
     pub start_over_date: Option<i16>,
 }
 
-#[utoipa::path(put, path = "/users/{uid}", params(("uid" = Uuid, Path)), request_body = UpdateUserPayload, responses((status = 200, body = UserRead)), tag = "Users")]
+#[utoipa::path(put, path = "/users/{uid}", params(("uid" = Uuid, Path)), request_body = UpdateUserPayload, responses((status = 200, body = UserRead)), tag = "Users", operation_id = "updateUser")]
 pub async fn update_user(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
@@ -146,7 +146,7 @@ pub struct LoginUserPayload {
     pub password: String,
 }
 
-#[utoipa::path(post, path = "/auth/login", request_body = LoginUserPayload, responses((status = 200, body = UserRead), (status = 401, description = "Unauthorized")), tag = "Users")]
+#[utoipa::path(post, path = "/auth/login", request_body = LoginUserPayload, responses((status = 200, body = UserRead), (status = 401, description = "Unauthorized")), tag = "Users", operation_id = "loginUser")]
 pub async fn login_user(
     State(state): State<AppState>,
     Json(payload): Json<LoginUserPayload>,
