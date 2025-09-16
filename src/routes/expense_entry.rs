@@ -10,8 +10,7 @@ use crate::{
     auth::{AuthContext, AuthSource},
     error::AppError,
     repos::expense_entry::{
-        CreateExpenseEntryPayload as CreateDbPayload, ExpenseEntry, ExpenseEntryRepo,
-        UpdateExpenseEntryPayload as UpdateDbPayload,
+        CreateExpenseEntryDbPayload, ExpenseEntry, ExpenseEntryRepo, UpdateExpenseEntryDbPayload,
     },
     types::AppState,
 };
@@ -60,7 +59,7 @@ pub async fn create_expense_entry(
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let created = ExpenseEntryRepo::create_expense_entry(
         &mut tx,
-        CreateDbPayload {
+        CreateExpenseEntryDbPayload {
             price: payload.price,
             product: payload.product,
             group_uid: payload.group_uid,
@@ -100,7 +99,7 @@ pub async fn update_expense_entry(
     let updated = ExpenseEntryRepo::update(
         &mut tx,
         uid,
-        UpdateDbPayload {
+        UpdateExpenseEntryDbPayload {
             price: payload.price,
             product: payload.product,
             category_uid: payload.category_uid,

@@ -40,7 +40,7 @@ impl ExpenseEntry {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CreateExpenseEntryPayload {
+pub struct CreateExpenseEntryDbPayload {
     pub price: f64,
     pub product: String,
     pub group_uid: Uuid,
@@ -48,7 +48,7 @@ pub struct CreateExpenseEntryPayload {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UpdateExpenseEntryPayload {
+pub struct UpdateExpenseEntryDbPayload {
     pub price: Option<f64>,
     pub product: Option<String>,
     pub category_uid: Option<Uuid>,
@@ -57,7 +57,7 @@ pub struct UpdateExpenseEntryPayload {
 impl ExpenseEntryRepo {
     pub async fn create_expense_entry(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-        payload: CreateExpenseEntryPayload,
+        payload: CreateExpenseEntryDbPayload,
     ) -> Result<ExpenseEntry, DatabaseError> {
         let uid = uuid::Uuid::new_v4();
         let rec = sqlx::query_as::<_, ExpenseEntry>(
@@ -107,7 +107,7 @@ impl ExpenseEntryRepo {
     pub async fn update(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         uid: Uuid,
-        payload: UpdateExpenseEntryPayload,
+        payload: UpdateExpenseEntryDbPayload,
     ) -> Result<ExpenseEntry, DatabaseError> {
         let current = Self::get(tx, uid).await?;
         let price = payload.price.unwrap_or(current.price);

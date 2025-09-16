@@ -10,7 +10,7 @@ use crate::{
     auth::{AuthContext, AuthSource},
     error::AppError,
     repos::expense_group_member::{
-        CreateGroupMemberPayload, GroupMember, GroupMemberRepo, UpdateGroupMemberPayload,
+        CreateGroupMemberDbPayload, GroupMember, GroupMemberRepo, UpdateGroupMemberDbPayload,
     },
     types::AppState,
 };
@@ -41,17 +41,17 @@ pub async fn get(
 }
 
 #[derive(Deserialize, ToSchema)]
-pub struct CreatePayload {
+pub struct CreateGroupMemberPayload {
     pub group_uid: Uuid,
     pub user_uid: Uuid,
     pub role: String,
 }
 
-#[utoipa::path(post, path = "/group-members", request_body = CreatePayload, responses((status = 200, body = GroupMember)), tag = "Group Members", operation_id = "createGroupMember", security(("bearerAuth" = [])))]
+#[utoipa::path(post, path = "/group-members", request_body = CreateGroupMemberPayload, responses((status = 200, body = GroupMember)), tag = "Group Members", operation_id = "createGroupMember", security(("bearerAuth" = [])))]
 pub async fn create(
     State(state): State<AppState>,
     Extension(auth): Extension<AuthContext>,
-    Json(payload): Json<CreatePayload>,
+    Json(payload): Json<CreateGroupMemberPayload>,
 ) -> Result<Json<GroupMember>, AppError> {
     if matches!(auth.source, AuthSource::Chat) && auth.group_uid != Some(payload.group_uid) {
         return Err(AppError::Unauthorized("Group scope mismatch".into()));
@@ -59,7 +59,7 @@ pub async fn create(
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let created = GroupMemberRepo::create(
         &mut tx,
-        CreateGroupMemberPayload {
+        CreateGroupMemberDbPayload {
             group_uid: payload.group_uid,
             user_uid: payload.user_uid,
             role: payload.role,
@@ -71,20 +71,23 @@ pub async fn create(
 }
 
 #[derive(Deserialize, ToSchema)]
-pub struct UpdatePayload {
+pub struct UpdateGroupMemberPayload {
     pub role: Option<String>,
 }
 
-#[utoipa::path(put, path = "/group-members/{id}", params(("id" = Uuid, Path)), request_body = UpdatePayload, responses((status = 200, body = GroupMember)), tag = "Group Members", operation_id = "updateGroupMember", security(("bearerAuth" = [])))]
+#[utoipa::path(put, path = "/group-members/{id}", params(("id" = Uuid, Path)), request_body = UpdateGroupMemberPayload, responses((status = 200, body = GroupMember)), tag = "Group Members", operation_id = "updateGroupMember", security(("bearerAuth" = [])))]
 pub async fn update(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
-    Json(payload): Json<UpdatePayload>,
+    Json(payload): Json<UpdateGroupMemberPayload>,
 ) -> Result<Json<GroupMember>, AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
-    let updated =
-        GroupMemberRepo::update(&mut tx, id, UpdateGroupMemberPayload { role: payload.role })
-            .await?;
+    let updated = GroupMemberRepo::update(
+        &mut tx,
+        id,
+        UpdateGroupMemberDbPayload { role: payload.role },
+    )
+    .await?;
     tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(Json(updated))
 }

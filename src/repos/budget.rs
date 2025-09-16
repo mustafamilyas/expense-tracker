@@ -16,7 +16,7 @@ pub struct Budget {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CreateBudgetPayload {
+pub struct CreateBudgetDbPayload {
     pub group_uid: Uuid,
     pub category_uid: Uuid,
     pub amount: f64,
@@ -25,7 +25,7 @@ pub struct CreateBudgetPayload {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UpdateBudgetPayload {
+pub struct UpdateBudgetDbPayload {
     pub amount: Option<f64>,
     pub period_year: Option<i32>,
     pub period_month: Option<i32>,
@@ -61,7 +61,7 @@ impl BudgetRepo {
 
     pub async fn create(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-        payload: CreateBudgetPayload,
+        payload: CreateBudgetDbPayload,
     ) -> Result<Budget, DatabaseError> {
         let uid = Uuid::new_v4();
         let row = sqlx::query_as::<_, Budget>(
@@ -83,7 +83,7 @@ impl BudgetRepo {
     pub async fn update(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         uid: Uuid,
-        payload: UpdateBudgetPayload,
+        payload: UpdateBudgetDbPayload,
     ) -> Result<Budget, DatabaseError> {
         let current = Self::get(tx, uid).await?;
         let amount = payload.amount.unwrap_or(current.amount);

@@ -1,9 +1,19 @@
-use axum::{extract::{Path, State, Extension}, Json};
+use axum::{
+    Json,
+    extract::{Extension, Path, State},
+};
 use serde::Deserialize;
-use uuid::Uuid;
 use utoipa::ToSchema;
+use uuid::Uuid;
 
-use crate::{error::AppError, repos::chat_binding::{ChatBinding, ChatBindingRepo, CreateChatBindingPayload, UpdateChatBindingPayload}, types::AppState, auth::{AuthContext, AuthSource}};
+use crate::{
+    auth::{AuthContext, AuthSource},
+    error::AppError,
+    repos::chat_binding::{
+        ChatBinding, ChatBindingRepo, CreateChatBindingDbPayload, UpdateChatBindingDbPayload,
+    },
+    types::AppState,
+};
 
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
@@ -20,7 +30,10 @@ pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<ChatBinding>
 }
 
 #[utoipa::path(get, path = "/chat-bindings/{id}", params(("id" = Uuid, Path)), responses((status = 200, body = ChatBinding)), tag = "Chat Bindings", operation_id = "getChatBinding", security(("bearerAuth" = [])))]
-pub async fn get(State(state): State<AppState>, Path(id): Path<Uuid>) -> Result<Json<ChatBinding>, AppError> {
+pub async fn get(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<ChatBinding>, AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let res = ChatBindingRepo::get(&mut tx, id).await?;
     tx.commit().await.map_err(|e| AppError::from(e))?;
@@ -28,32 +41,61 @@ pub async fn get(State(state): State<AppState>, Path(id): Path<Uuid>) -> Result<
 }
 
 #[derive(Deserialize, ToSchema)]
-pub struct CreatePayload { pub group_uid: Uuid, pub platform: String, pub p_uid: String, pub status: Option<String>, pub bound_by: Uuid }
+pub struct CreateChatBindingPayload {
+    pub group_uid: Uuid,
+    pub platform: String,
+    pub p_uid: String,
+    pub status: Option<String>,
+    pub bound_by: Uuid,
+}
 
-#[utoipa::path(post, path = "/chat-bindings", request_body = CreatePayload, responses((status = 200, body = ChatBinding)), tag = "Chat Bindings", operation_id = "createChatBinding", security(("bearerAuth" = [])))]
-pub async fn create(State(state): State<AppState>, Extension(auth): Extension<AuthContext>, Json(payload): Json<CreatePayload>) -> Result<Json<ChatBinding>, AppError> {
+#[utoipa::path(post, path = "/chat-bindings", request_body = CreateChatBindingPayload, responses((status = 200, body = ChatBinding)), tag = "Chat Bindings", operation_id = "createChatBinding", security(("bearerAuth" = [])))]
+pub async fn create(
+    State(state): State<AppState>,
+    Extension(auth): Extension<AuthContext>,
+    Json(payload): Json<CreateChatBindingPayload>,
+) -> Result<Json<ChatBinding>, AppError> {
     if matches!(auth.source, AuthSource::Chat) && auth.group_uid != Some(payload.group_uid) {
         return Err(AppError::Unauthorized("Group scope mismatch".into()));
     }
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
-    let created = ChatBindingRepo::create(&mut tx, CreateChatBindingPayload {
-        group_uid: payload.group_uid,
-        platform: payload.platform,
-        p_uid: payload.p_uid,
-        status: payload.status,
-        bound_by: payload.bound_by,
-    }).await?;
+    let created = ChatBindingRepo::create(
+        &mut tx,
+        CreateChatBindingDbPayload {
+            group_uid: payload.group_uid,
+            platform: payload.platform,
+            p_uid: payload.p_uid,
+            status: payload.status,
+            bound_by: payload.bound_by,
+        },
+    )
+    .await?;
     tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(Json(created))
 }
 
 #[derive(Deserialize, ToSchema)]
-pub struct UpdatePayload { pub status: Option<String>, pub revoked_at: Option<Option<chrono::DateTime<chrono::Utc>>> }
+pub struct UpdateChatBindingPayload {
+    pub status: Option<String>,
+    pub revoked_at: Option<Option<chrono::DateTime<chrono::Utc>>>,
+}
 
-#[utoipa::path(put, path = "/chat-bindings/{id}", params(("id" = Uuid, Path)), request_body = UpdatePayload, responses((status = 200, body = ChatBinding)), tag = "Chat Bindings", operation_id = "updateChatBinding", security(("bearerAuth" = [])))]
-pub async fn update(State(state): State<AppState>, Path(id): Path<Uuid>, Json(payload): Json<UpdatePayload>) -> Result<Json<ChatBinding>, AppError> {
+#[utoipa::path(put, path = "/chat-bindings/{id}", params(("id" = Uuid, Path)), request_body = UpdateChatBindingPayload, responses((status = 200, body = ChatBinding)), tag = "Chat Bindings", operation_id = "updateChatBinding", security(("bearerAuth" = [])))]
+pub async fn update(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<UpdateChatBindingPayload>,
+) -> Result<Json<ChatBinding>, AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
-    let updated = ChatBindingRepo::update(&mut tx, id, UpdateChatBindingPayload { status: payload.status, revoked_at: payload.revoked_at }).await?;
+    let updated = ChatBindingRepo::update(
+        &mut tx,
+        id,
+        UpdateChatBindingDbPayload {
+            status: payload.status,
+            revoked_at: payload.revoked_at,
+        },
+    )
+    .await?;
     tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(Json(updated))
 }

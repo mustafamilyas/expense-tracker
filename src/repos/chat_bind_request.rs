@@ -18,7 +18,7 @@ pub struct ChatBindRequest {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CreateChatBindRequestPayload {
+pub struct CreateChatBindRequestDbPayload {
     pub platform: String,
     pub p_uid: String,
     pub nonce: String,
@@ -27,7 +27,7 @@ pub struct CreateChatBindRequestPayload {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UpdateChatBindRequestPayload {
+pub struct UpdateChatBindRequestDbPayload {
     pub user_uid: Option<Option<Uuid>>, // Some(None) to clear, Some(Some(v)) to set
     pub expires_at: Option<DateTime<Utc>>,
 }
@@ -63,7 +63,7 @@ impl ChatBindRequestRepo {
 
     pub async fn create(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-        payload: CreateChatBindRequestPayload,
+        payload: CreateChatBindRequestDbPayload,
     ) -> Result<ChatBindRequest, DatabaseError> {
         let id = Uuid::new_v4();
         let row = sqlx::query_as::<_, ChatBindRequest>(
@@ -85,7 +85,7 @@ impl ChatBindRequestRepo {
     pub async fn update(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         id: Uuid,
-        payload: UpdateChatBindRequestPayload,
+        payload: UpdateChatBindRequestDbPayload,
     ) -> Result<ChatBindRequest, DatabaseError> {
         let current = Self::get(tx, id).await?;
         let user_uid = match payload.user_uid {
