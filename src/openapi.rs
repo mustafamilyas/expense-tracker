@@ -80,6 +80,7 @@ use crate::{repos as repo, routes, types};
         routes::users::CreateUserPayload,
         routes::users::UpdateUserPayload,
         routes::users::LoginUserPayload,
+        routes::users::LoginResponse,
         routes::expense_entry::CreateExpenseEntryPayload,
         
         routes::categories::CreatePayload,
@@ -95,6 +96,7 @@ use crate::{repos as repo, routes, types};
         routes::group_members::CreatePayload,
         routes::group_members::UpdatePayload,
         routes::version::VersionBody,
+        // Auth docs live in docs/auth.md; OpenAPI only declares bearer scheme.
         // Common models
         types::DeleteResponse,
     )),
@@ -109,6 +111,26 @@ use crate::{repos as repo, routes, types};
         (name = "Chat Bindings"),
         (name = "Group Members"),
         (name = "System"),
-    )
+    ),
+    modifiers(&ApiSecurity)
 )]
 pub struct ApiDoc;
+
+use utoipa::Modify;
+
+pub struct ApiSecurity;
+
+impl Modify for ApiSecurity {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        use utoipa::openapi::security::{HttpAuthScheme, SecurityScheme};
+        use utoipa::openapi::security::HttpBuilder;
+        let components = openapi.components.get_or_insert_with(Default::default);
+        let bearer = SecurityScheme::Http(
+            HttpBuilder::new()
+                .scheme(HttpAuthScheme::Bearer)
+                .bearer_format("JWT")
+                .build(),
+        );
+        components.add_security_scheme("bearerAuth", bearer);
+    }
+}

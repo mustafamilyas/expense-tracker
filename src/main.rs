@@ -1,15 +1,28 @@
 use anyhow::Result;
 use expense_tracker::{app, db, types::AppState};
+use std::env;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // initialize tracing
     tracing_subscriber::fmt::init();
 
+    // load secrets
+    let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| {
+        tracing::warn!("JWT_SECRET not set; using insecure default for development");
+        "dev-secret-change-me".to_string()
+    });
+    let chat_relay_secret = env::var("CHAT_RELAY_SECRET").unwrap_or_else(|_| {
+        tracing::warn!("CHAT_RELAY_SECRET not set; using insecure default for development");
+        "dev-chat-relay-secret".to_string()
+    });
+
     // build our application with a route
     let app = app::build_router(AppState {
         version: "0.1.0".to_string(),
         db_pool: db::make_db_pool("postgres://postgres:postgres@localhost/postgres").await?,
+        jwt_secret,
+        chat_relay_secret,
     });
 
     // run our app with hyper, listening globally on port 3000

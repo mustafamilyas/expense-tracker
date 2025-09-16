@@ -26,7 +26,8 @@ pub fn router() -> axum::Router<AppState> {
     path = "/expense-groups", 
     responses((status = 200, body = [ExpenseGroup])), 
     tag = "Expense Groups",
-    operation_id = "listExpenseGroups"
+    operation_id = "listExpenseGroups",
+    security(("bearerAuth" = []))
 )]
 pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<ExpenseGroup>>, AppError> {
     let mut tx = state
@@ -47,7 +48,8 @@ pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<ExpenseGroup
     params(("uid" = Uuid, Path, description = "Group uid")), 
     responses((status = 200, body = ExpenseGroup)), 
     tag = "Expense Groups",
-    operation_id = "getExpenseGroup"
+    operation_id = "getExpenseGroup",
+    security(("bearerAuth" = []))
 )]
 pub async fn get(
     State(state): State<AppState>,
@@ -72,7 +74,8 @@ pub async fn get(
     request_body = CreateExpenseGroupPayload, 
     responses((status = 200, body = ExpenseGroup)), 
     tag = "Expense Groups",
-    operation_id = "createExpenseGroup"
+    operation_id = "createExpenseGroup",
+    security(("bearerAuth" = []))
 )]
 pub async fn create(
     State(state): State<AppState>,
@@ -104,7 +107,8 @@ pub async fn create(
     request_body = UpdateExpenseGroupPayload, 
     responses((status = 200, body = ExpenseGroup)), 
     tag = "Expense Groups",
-    operation_id = "updateExpenseGroup"
+    operation_id = "updateExpenseGroup",
+    security(("bearerAuth" = []))
 )]
 pub async fn update(
     State(state): State<AppState>,
@@ -137,7 +141,8 @@ pub async fn update(
     params(("uid" = Uuid, Path)), 
     responses((status = 200, description = "Deleted", body = DeleteResponse)), 
     tag = "Expense Groups",
-    operation_id = "deleteExpenseGroup"
+    operation_id = "deleteExpenseGroup",
+    security(("bearerAuth" = []))
 )]
 pub async fn delete_(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<Json<DeleteResponse>, AppError> {
     let mut tx = state

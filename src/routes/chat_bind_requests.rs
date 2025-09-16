@@ -21,7 +21,7 @@ pub fn router() -> axum::Router<AppState> {
         .route("/{id}", axum::routing::get(get).put(update).delete(delete_))
 }
 
-#[utoipa::path(get, path = "/chat-bind-requests", responses((status = 200, body = [ChatBindRequest])), tag = "Chat Bind Requests", operation_id = "listChatBindRequests")]
+#[utoipa::path(get, path = "/chat-bind-requests", responses((status = 200, body = [ChatBindRequest])), tag = "Chat Bind Requests", operation_id = "listChatBindRequests", security(("bearerAuth" = [])))]
 pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<ChatBindRequest>>, AppError> {
     let mut tx = state
         .db_pool
@@ -35,7 +35,7 @@ pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<ChatBindRequ
     Ok(Json(res))
 }
 
-#[utoipa::path(get, path = "/chat-bind-requests/{id}", params(("id" = Uuid, Path)), responses((status = 200, body = ChatBindRequest)), tag = "Chat Bind Requests", operation_id = "getChatBindRequest")]
+#[utoipa::path(get, path = "/chat-bind-requests/{id}", params(("id" = Uuid, Path)), responses((status = 200, body = ChatBindRequest)), tag = "Chat Bind Requests", operation_id = "getChatBindRequest", security(("bearerAuth" = [])))]
 pub async fn get(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -61,7 +61,7 @@ pub struct CreatePayload {
     pub expires_at: chrono::DateTime<chrono::Utc>,
 }
 
-#[utoipa::path(post, path = "/chat-bind-requests", request_body = CreatePayload, responses((status = 200, body = ChatBindRequest)), tag = "Chat Bind Requests", operation_id = "createChatBindRequest")]
+#[utoipa::path(post, path = "/chat-bind-requests", request_body = CreatePayload, responses((status = 200, body = ChatBindRequest)), tag = "Chat Bind Requests", operation_id = "createChatBindRequest", security(("bearerAuth" = [])))]
 pub async fn create(
     State(state): State<AppState>,
     Json(payload): Json<CreatePayload>,
@@ -94,7 +94,7 @@ pub struct UpdatePayload {
     pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
-#[utoipa::path(put, path = "/chat-bind-requests/{id}", params(("id" = Uuid, Path)), request_body = UpdatePayload, responses((status = 200, body = ChatBindRequest)), tag = "Chat Bind Requests", operation_id = "updateChatBindRequest")]
+#[utoipa::path(put, path = "/chat-bind-requests/{id}", params(("id" = Uuid, Path)), request_body = UpdatePayload, responses((status = 200, body = ChatBindRequest)), tag = "Chat Bind Requests", operation_id = "updateChatBindRequest", security(("bearerAuth" = [])))]
 pub async fn update(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -120,7 +120,7 @@ pub async fn update(
     Ok(Json(updated))
 }
 
-#[utoipa::path(delete, path = "/chat-bind-requests/{id}", params(("id" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Chat Bind Requests", operation_id = "deleteChatBindRequest")]
+#[utoipa::path(delete, path = "/chat-bind-requests/{id}", params(("id" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Chat Bind Requests", operation_id = "deleteChatBindRequest", security(("bearerAuth" = [])))]
 pub async fn delete_(State(state): State<AppState>, Path(id): Path<Uuid>) -> Result<(), AppError> {
     let mut tx = state
         .db_pool

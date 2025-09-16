@@ -1,6 +1,6 @@
 use axum::{
     Json,
-    extract::{Path, State},
+    extract::{Path, State, Extension},
 };
 use serde::Deserialize;
 use utoipa::ToSchema;
@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::{
     error::AppError,
+    auth::{AuthContext, AuthSource},
     repos::category::{Category, CategoryRepo, CreateCategoryPayload, UpdateCategoryPayload},
     types::AppState,
 };
@@ -21,7 +22,7 @@ pub fn router() -> axum::Router<AppState> {
         )
 }
 
-#[utoipa::path(get, path = "/categories", responses((status = 200, body = [Category])), tag = "Categories", operation_id = "listCategories")]
+#[utoipa::path(get, path = "/categories", responses((status = 200, body = [Category])), tag = "Categories", operation_id = "listCategories", security(("bearerAuth" = [])))]
 pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Category>>, AppError> {
     let mut tx = state
         .db_pool
@@ -35,7 +36,7 @@ pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Category>>, 
     Ok(Json(res))
 }
 
-#[utoipa::path(get, path = "/categories/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = Category)), tag = "Categories", operation_id = "getCategory")]
+#[utoipa::path(get, path = "/categories/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = Category)), tag = "Categories", operation_id = "getCategory", security(("bearerAuth" = [])))]
 pub async fn get(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
@@ -59,11 +60,15 @@ pub struct CreatePayload {
     pub description: Option<String>,
 }
 
-#[utoipa::path(post, path = "/categories", request_body = CreatePayload, responses((status = 200, body = Category)), tag = "Categories", operation_id = "createCategory")]
+#[utoipa::path(post, path = "/categories", request_body = CreatePayload, responses((status = 200, body = Category)), tag = "Categories", operation_id = "createCategory", security(("bearerAuth" = [])))]
 pub async fn create(
     State(state): State<AppState>,
+    Extension(auth): Extension<AuthContext>,
     Json(payload): Json<CreatePayload>,
 ) -> Result<Json<Category>, AppError> {
+    if matches!(auth.source, AuthSource::Chat) && auth.group_uid != Some(payload.group_uid) {
+        return Err(AppError::Unauthorized("Group scope mismatch".into()));
+    }
     let mut tx = state
         .db_pool
         .begin()
@@ -90,7 +95,7 @@ pub struct UpdatePayload {
     pub description: Option<String>,
 }
 
-#[utoipa::path(put, path = "/categories/{uid}", params(("uid" = Uuid, Path)), request_body = UpdatePayload, responses((status = 200, body = Category)), tag = "Categories", operation_id = "updateCategory")]
+#[utoipa::path(put, path = "/categories/{uid}", params(("uid" = Uuid, Path)), request_body = UpdatePayload, responses((status = 200, body = Category)), tag = "Categories", operation_id = "updateCategory", security(("bearerAuth" = [])))]
 pub async fn update(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
@@ -116,7 +121,7 @@ pub async fn update(
     Ok(Json(updated))
 }
 
-#[utoipa::path(delete, path = "/categories/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Categories", operation_id = "deleteCategory")]
+#[utoipa::path(delete, path = "/categories/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Categories", operation_id = "deleteCategory", security(("bearerAuth" = [])))]
 pub async fn delete_(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<(), AppError> {
     let mut tx = state
         .db_pool

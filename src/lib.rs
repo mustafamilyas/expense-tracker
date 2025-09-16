@@ -5,3 +5,4 @@ pub mod openapi;
 pub mod repos;
 pub mod routes;
 pub mod types;
+pub mod auth;

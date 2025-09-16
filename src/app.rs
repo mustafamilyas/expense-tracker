@@ -4,8 +4,10 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{routes, types::AppState};
+use axum::middleware;
 
 pub fn build_router(app_state: AppState) -> Router {
+    let auth_state = app_state.clone();
     Router::new()
         .nest("/expense-entries", routes::expense_entry::router())
         .nest("/categories", routes::categories::router())
@@ -20,5 +22,6 @@ pub fn build_router(app_state: AppState) -> Router {
         .merge(routes::expense_groups::router())
         .merge(SwaggerUi::new("/docs").url("/api-doc/openapi.json", ApiDoc::openapi()))
         .with_state(app_state)
+        .layer(middleware::from_fn_with_state(auth_state, crate::auth::auth_middleware))
         .layer(tower_http::trace::TraceLayer::new_for_http())
 }

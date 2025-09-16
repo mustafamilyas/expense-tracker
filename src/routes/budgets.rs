@@ -1,6 +1,6 @@
 use axum::{
     Json,
-    extract::{Path, State},
+    extract::{Path, State, Extension},
 };
 use serde::Deserialize;
 use utoipa::ToSchema;
@@ -10,6 +10,7 @@ use crate::{
     error::AppError,
     repos::budget::{Budget, BudgetRepo, CreateBudgetPayload, UpdateBudgetPayload},
     types::AppState,
+    auth::{AuthContext, AuthSource},
 };
 
 pub fn router() -> axum::Router<AppState> {
@@ -21,7 +22,7 @@ pub fn router() -> axum::Router<AppState> {
         )
 }
 
-#[utoipa::path(get, path = "/budgets", responses((status = 200, body = [Budget])), tag = "Budgets", operation_id = "listBudgets")]
+#[utoipa::path(get, path = "/budgets", responses((status = 200, body = [Budget])), tag = "Budgets", operation_id = "listBudgets", security(("bearerAuth" = [])))]
 pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Budget>>, AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let res = BudgetRepo::list(&mut tx).await?;
@@ -29,7 +30,7 @@ pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Budget>>, Ap
     Ok(Json(res))
 }
 
-#[utoipa::path(get, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = Budget)), tag = "Budgets", operation_id = "getBudget")]
+#[utoipa::path(get, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = Budget)), tag = "Budgets", operation_id = "getBudget", security(("bearerAuth" = [])))]
 pub async fn get(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
@@ -49,11 +50,15 @@ pub struct CreatePayload {
     pub period_month: Option<i32>,
 }
 
-#[utoipa::path(post, path = "/budgets", request_body = CreatePayload, responses((status = 200, body = Budget)), tag = "Budgets", operation_id = "createBudget")]
+#[utoipa::path(post, path = "/budgets", request_body = CreatePayload, responses((status = 200, body = Budget)), tag = "Budgets", operation_id = "createBudget", security(("bearerAuth" = [])))]
 pub async fn create(
     State(state): State<AppState>,
+    Extension(auth): Extension<AuthContext>,
     Json(payload): Json<CreatePayload>,
 ) -> Result<Json<Budget>, AppError> {
+    if matches!(auth.source, AuthSource::Chat) && auth.group_uid != Some(payload.group_uid) {
+        return Err(AppError::Unauthorized("Group scope mismatch".into()));
+    }
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let created = BudgetRepo::create(
         &mut tx,
@@ -77,7 +82,7 @@ pub struct UpdatePayload {
     pub period_month: Option<i32>,
 }
 
-#[utoipa::path(put, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), request_body = UpdatePayload, responses((status = 200, body = Budget)), tag = "Budgets", operation_id = "updateBudget")]
+#[utoipa::path(put, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), request_body = UpdatePayload, responses((status = 200, body = Budget)), tag = "Budgets", operation_id = "updateBudget", security(("bearerAuth" = [])))]
 pub async fn update(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
@@ -98,7 +103,7 @@ pub async fn update(
     Ok(Json(updated))
 }
 
-#[utoipa::path(delete, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Budgets", operation_id = "deleteBudget")]
+#[utoipa::path(delete, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Budgets", operation_id = "deleteBudget", security(("bearerAuth" = [])))]
 pub async fn delete_(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<(), AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     BudgetRepo::delete(&mut tx, uid).await?;

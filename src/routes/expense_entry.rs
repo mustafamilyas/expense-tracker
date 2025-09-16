@@ -1,12 +1,13 @@
 use axum::{
     Json,
-    extract::{Path, State},
+    extract::{Extension, Path, State},
 };
 use serde::Deserialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
+    auth::{AuthContext, AuthSource},
     error::AppError,
     repos::expense_entry::{
         CreateExpenseEntryPayload as CreateDbPayload, ExpenseEntry, ExpenseEntryRepo,
@@ -29,7 +30,7 @@ pub fn router() -> axum::Router<AppState> {
         )
 }
 
-#[utoipa::path(get, path = "/expense-entries", responses((status = 200, body = [ExpenseEntry])), tag = "Expense Entries", operation_id = "listExpenseEntries")]
+#[utoipa::path(get, path = "/expense-entries", responses((status = 200, body = [ExpenseEntry])), tag = "Expense Entries", operation_id = "listExpenseEntries", security(("bearerAuth" = [])))]
 pub async fn list_expense_entries(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<ExpenseEntry>>, AppError> {
@@ -47,11 +48,15 @@ pub struct CreateExpenseEntryPayload {
     pub category_uid: Uuid,
 }
 
-#[utoipa::path(post, path = "/expense-entries", request_body = CreateExpenseEntryPayload, responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "createExpenseEntry")]
+#[utoipa::path(post, path = "/expense-entries", request_body = CreateExpenseEntryPayload, responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "createExpenseEntry", security(("bearerAuth" = [])))]
 pub async fn create_expense_entry(
     State(state): State<AppState>,
+    Extension(auth): Extension<AuthContext>,
     Json(payload): Json<CreateExpenseEntryPayload>,
 ) -> Result<Json<ExpenseEntry>, AppError> {
+    if matches!(auth.source, AuthSource::Chat) && auth.group_uid != Some(payload.group_uid) {
+        return Err(AppError::Unauthorized("Group scope mismatch".into()));
+    }
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let created = ExpenseEntryRepo::create_expense_entry(
         &mut tx,
@@ -67,7 +72,7 @@ pub async fn create_expense_entry(
     Ok(Json(created))
 }
 
-#[utoipa::path(get, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "getExpenseEntry")]
+#[utoipa::path(get, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "getExpenseEntry", security(("bearerAuth" = [])))]
 pub async fn get_expense_entry(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
@@ -85,7 +90,7 @@ pub struct UpdateExpenseEntryPayload {
     pub category_uid: Option<Uuid>,
 }
 
-#[utoipa::path(put, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), request_body = UpdateExpenseEntryPayload, responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "updateExpenseEntry")]
+#[utoipa::path(put, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), request_body = UpdateExpenseEntryPayload, responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "updateExpenseEntry", security(("bearerAuth" = [])))]
 pub async fn update_expense_entry(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
@@ -106,7 +111,7 @@ pub async fn update_expense_entry(
     Ok(Json(updated))
 }
 
-#[utoipa::path(delete, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Expense Entries", operation_id = "deleteExpenseEntry")]
+#[utoipa::path(delete, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Expense Entries", operation_id = "deleteExpenseEntry", security(("bearerAuth" = [])))]
 pub async fn delete_expense_entry(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,

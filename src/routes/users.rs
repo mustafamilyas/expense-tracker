@@ -30,7 +30,15 @@ pub fn router() -> axum::Router<AppState> {
         .route("/auth/login", axum::routing::post(login_user))
 }
 
-#[utoipa::path(get, path = "/users", responses((status = 200, body = [UserRead])), tag = "Users", operation_id = "listUsers")]
+// TODO: restrict to admin users only
+#[utoipa::path(
+    get, 
+    path = "/users", 
+    responses((status = 200, body = [UserRead])), 
+    tag = "Users", 
+    operation_id = "listUsers", 
+    security(("bearerAuth" = []))
+)]
 pub async fn list_users(State(state): State<AppState>) -> Result<Json<Vec<UserRead>>, AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let res = UserRepo::list(&mut tx).await?;
@@ -85,7 +93,17 @@ pub async fn create_user(
     }))
 }
 
-#[utoipa::path(get, path = "/users/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = UserRead), (status = 404, description = "Not found")), tag = "Users", operation_id = "getUser")]
+#[utoipa::path(
+    get, 
+    path = "/users/{uid}", 
+    params(("uid" = Uuid, Path)), 
+    responses((status = 200, body = UserRead), (status = 404, description = "Not found")), 
+    tag = "Users", 
+    operation_id = "getUser",
+    security(
+        ("bearerAuth" = [])
+    )
+)]
 pub async fn get_user(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
@@ -107,7 +125,7 @@ pub struct UpdateUserPayload {
     pub start_over_date: Option<i16>,
 }
 
-#[utoipa::path(put, path = "/users/{uid}", params(("uid" = Uuid, Path)), request_body = UpdateUserPayload, responses((status = 200, body = UserRead)), tag = "Users", operation_id = "updateUser")]
+#[utoipa::path(put, path = "/users/{uid}", params(("uid" = Uuid, Path)), request_body = UpdateUserPayload, responses((status = 200, body = UserRead)), tag = "Users", operation_id = "updateUser", security(("bearerAuth" = [])))]
 pub async fn update_user(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
@@ -146,11 +164,17 @@ pub struct LoginUserPayload {
     pub password: String,
 }
 
-#[utoipa::path(post, path = "/auth/login", request_body = LoginUserPayload, responses((status = 200, body = UserRead), (status = 401, description = "Unauthorized")), tag = "Users", operation_id = "loginUser")]
+#[derive(serde::Serialize, ToSchema)]
+pub struct LoginResponse {
+    pub token: String,
+    pub user: UserRead,
+}
+
+#[utoipa::path(post, path = "/auth/login", request_body = LoginUserPayload, responses((status = 200, body = LoginResponse), (status = 401, description = "Unauthorized")), tag = "Users", operation_id = "loginUser")]
 pub async fn login_user(
     State(state): State<AppState>,
     Json(payload): Json<LoginUserPayload>,
-) -> Result<Json<UserRead>, AppError> {
+) -> Result<Json<LoginResponse>, AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let user = UserRepo::get_by_email(&mut tx, &payload.email)
         .await
@@ -167,10 +191,16 @@ pub async fn login_user(
         return Err(AppError::Unauthorized("Invalid email or password".into()));
     }
 
-    // TODO: Generate and return a JWT or session token here for authenticated sessions
-    Ok(Json(UserRead {
-        uid: user.uid,
-        email: user.email,
-        start_over_date: user.start_over_date,
+    // Issue JWT for web clients
+    let token = crate::auth::encode_web_jwt(user.uid, &state.jwt_secret, 60 * 60 * 24 * 7)
+        .map_err(AppError::Internal)?;
+
+    Ok(Json(LoginResponse {
+        token,
+        user: UserRead {
+            uid: user.uid,
+            email: user.email,
+            start_over_date: user.start_over_date,
+        },
     }))
 }
