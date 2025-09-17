@@ -18,6 +18,8 @@ use uuid::Uuid;
 
 use crate::types::AppState;
 
+pub mod group_guard;
+
 #[derive(Clone, Debug)]
 pub enum AuthSource {
     Web,
@@ -173,3 +175,4 @@ pub async fn auth_middleware(
 
     Err(StatusCode::UNAUTHORIZED)
 }
+

@@ -7,25 +7,39 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
-    auth::{AuthContext, AuthSource},
+    auth::{group_guard::group_guard, AuthContext},
     error::AppError,
-    repos::category::{Category, CategoryRepo, CreateCategoryDbPayload, UpdateCategoryDbPayload},
+    repos::{category::{Category, CategoryRepo, CreateCategoryDbPayload, UpdateCategoryDbPayload}},
     types::AppState,
 };
 
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
-        .route("/", axum::routing::get(list).post(create))
+        .route("/categories/groups/{group_uid}", axum::routing::get(list))
+        .route("/categories", axum::routing::post(create))
         .route(
-            "/{uid}",
+            "/categories/{uid}",
             axum::routing::get(get).put(update).delete(delete_),
         )
 }
 
-#[utoipa::path(get, path = "/categories", responses((status = 200, body = [Category])), tag = "Categories", operation_id = "listCategories", security(("bearerAuth" = [])))]
-pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Category>>, AppError> {
+#[utoipa::path(
+    get, 
+    path = "/categories/groups/{group_uid}", 
+    params(("group_uid" = Uuid, Path)),
+    responses((status = 200, body = [Category])), 
+    tag = "Categories", 
+    operation_id = "listCategories", 
+    security(("bearerAuth" = []))
+)]
+pub async fn list(
+    Extension(auth): Extension<AuthContext>,
+    State(state): State<AppState>,
+    Path(group_uid): Path<Uuid>,
+) -> Result<Json<Vec<Category>>, AppError> {
+    group_guard(&auth, group_uid, &state.db_pool).await?;
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
-    let res = CategoryRepo::list(&mut tx).await?;
+    let res = CategoryRepo::list_by_group(&mut tx, group_uid).await?;
     tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(Json(res))
 }
@@ -33,9 +47,12 @@ pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Category>>, 
 #[utoipa::path(get, path = "/categories/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = Category)), tag = "Categories", operation_id = "getCategory", security(("bearerAuth" = [])))]
 pub async fn get(
     State(state): State<AppState>,
+    Extension(auth): Extension<AuthContext>,
     Path(uid): Path<Uuid>,
 ) -> Result<Json<Category>, AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let prev_category = CategoryRepo::get(&mut tx, uid).await?;
+    group_guard(&auth, prev_category.group_uid, &state.db_pool).await?;
     let res = CategoryRepo::get(&mut tx, uid).await?;
     tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(Json(res))
@@ -48,15 +65,22 @@ pub struct CreateCategoryPayload {
     pub description: Option<String>,
 }
 
-#[utoipa::path(post, path = "/categories", request_body = CreateCategoryPayload, responses((status = 200, body = Category)), tag = "Categories", operation_id = "createCategory", security(("bearerAuth" = [])))]
+#[utoipa::path(
+    post,
+    path = "/categories", 
+    request_body = CreateCategoryPayload, 
+    responses((status = 200, body = Category)), 
+    tag = "Categories", 
+    operation_id = "createCategory", 
+    security(("bearerAuth" = [])))
+]
 pub async fn create(
     State(state): State<AppState>,
     Extension(auth): Extension<AuthContext>,
     Json(payload): Json<CreateCategoryPayload>,
 ) -> Result<Json<Category>, AppError> {
-    if matches!(auth.source, AuthSource::Chat) && auth.group_uid != Some(payload.group_uid) {
-        return Err(AppError::Unauthorized("Group scope mismatch".into()));
-    }
+    group_guard(&auth, payload.group_uid, &state.db_pool).await?;
+
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let created = CategoryRepo::create(
         &mut tx,
@@ -80,10 +104,15 @@ pub struct UpdateCategoryPayload {
 #[utoipa::path(put, path = "/categories/{uid}", params(("uid" = Uuid, Path)), request_body = UpdateCategoryPayload, responses((status = 200, body = Category)), tag = "Categories", operation_id = "updateCategory", security(("bearerAuth" = [])))]
 pub async fn update(
     State(state): State<AppState>,
+    Extension(auth): Extension<AuthContext>,
     Path(uid): Path<Uuid>,
     Json(payload): Json<UpdateCategoryPayload>,
 ) -> Result<Json<Category>, AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let prev_category = CategoryRepo::get(&mut tx, uid).await?;
+    
+    group_guard(&auth, prev_category.group_uid, &state.db_pool).await?;
+
     let updated = CategoryRepo::update(
         &mut tx,
         uid,
@@ -98,8 +127,14 @@ pub async fn update(
 }
 
 #[utoipa::path(delete, path = "/categories/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Categories", operation_id = "deleteCategory", security(("bearerAuth" = [])))]
-pub async fn delete_(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<(), AppError> {
+pub async fn delete_(
+    State(state): State<AppState>,
+    Extension(auth): Extension<AuthContext>, 
+    Path(uid): Path<Uuid>
+) -> Result<(), AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let prev_category = CategoryRepo::get(&mut tx, uid).await?;
+    group_guard(&auth, prev_category.group_uid, &state.db_pool).await?;
     CategoryRepo::delete(&mut tx, uid).await?;
     tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(())

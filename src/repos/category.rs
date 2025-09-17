@@ -43,6 +43,19 @@ impl CategoryRepo {
         Ok(rows)
     }
 
+    pub async fn list_by_group(
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        group_uid: Uuid,
+    ) -> Result<Vec<Category>, DatabaseError> {
+        let rows = sqlx::query_as::<_, Category>(
+            r#"SELECT uid, group_uid, name, description, created_at, updated_at FROM categories WHERE group_uid = $1 ORDER BY created_at DESC"#
+        )
+        .bind(group_uid)
+        .fetch_all(tx.as_mut())
+        .await?;
+        Ok(rows)
+    }
+
     pub async fn get(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         uid: Uuid,

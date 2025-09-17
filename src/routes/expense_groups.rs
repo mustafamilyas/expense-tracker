@@ -21,6 +21,7 @@ pub fn router() -> axum::Router<AppState> {
         )
 }
 
+// TODO: filter this to admin
 #[utoipa::path(
     get, 
     path = "/expense-groups", 
