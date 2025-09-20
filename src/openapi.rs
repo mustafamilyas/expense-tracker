@@ -6,7 +6,7 @@ use crate::{repos as repo, routes, types};
 #[openapi(
     paths(
         routes::users::list_users,
-        routes::users::get_user,
+        routes::users::get_me,
         routes::users::create_user,
         routes::users::update_user,
         routes::users::login_user,
@@ -30,7 +30,6 @@ use crate::{repos as repo, routes, types};
         routes::categories::delete_,
 
         routes::categories_aliases::list,
-        routes::categories_aliases::get,
         routes::categories_aliases::create,
         routes::categories_aliases::update,
         routes::categories_aliases::delete_,
@@ -41,17 +40,9 @@ use crate::{repos as repo, routes, types};
         routes::budgets::update,
         routes::budgets::delete_,
 
-        routes::chat_bind_requests::list,
-        routes::chat_bind_requests::get,
         routes::chat_bind_requests::create,
-        routes::chat_bind_requests::update,
-        routes::chat_bind_requests::delete_,
 
-        routes::chat_bindings::list,
-        routes::chat_bindings::get,
-        routes::chat_bindings::create,
-        routes::chat_bindings::update,
-        routes::chat_bindings::delete_,
+        routes::chat_bindings::accept,
 
         routes::group_members::list,
         routes::group_members::get,
@@ -90,9 +81,7 @@ use crate::{repos as repo, routes, types};
         routes::budgets::CreateBudgetPayload,
         routes::budgets::UpdateBudgetPayload,
         routes::chat_bind_requests::CreateChatBindRequestPayload,
-        routes::chat_bind_requests::UpdateChatBindRequestPayload,
-        routes::chat_bindings::CreateChatBindingPayload,
-        routes::chat_bindings::UpdateChatBindingPayload,
+        routes::chat_bindings::AcceptChatBindingPayload,
         routes::group_members::CreateGroupMemberPayload,
         routes::group_members::UpdateGroupMemberPayload,
         routes::version::VersionBody,

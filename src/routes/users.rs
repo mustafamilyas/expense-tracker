@@ -3,20 +3,17 @@ use argon2::{
     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
 use axum::{
-    Json,
-    extract::{Path, State},
+    extract::{Path, State}, Extension, Json
 };
 use serde::Deserialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
-    error::AppError,
-    repos::{
+    auth::AuthContext, error::AppError, repos::{
         expense_group::{CreateExpenseGroupPayload, ExpenseGroupRepo},
         user::{CreateUserDbPayload, UserRead, UserRepo},
-    },
-    types::AppState,
+    }, types::AppState
 };
 
 pub fn router() -> axum::Router<AppState> {
@@ -24,10 +21,12 @@ pub fn router() -> axum::Router<AppState> {
         .route("/users", axum::routing::get(list_users))
         .route(
             "/users/{uid}",
-            axum::routing::get(get_user).put(update_user),
+            axum::routing::put(update_user),
         )
+        .route("/users/me", axum::routing::get(get_me)) // alias for get_user
         .route("/auth/register", axum::routing::post(create_user))
         .route("/auth/login", axum::routing::post(login_user))
+    
 }
 
 // TODO: restrict to admin users only
@@ -95,21 +94,21 @@ pub async fn create_user(
 
 #[utoipa::path(
     get, 
-    path = "/users/{uid}", 
-    params(("uid" = Uuid, Path)), 
+    path = "/users/me", 
     responses((status = 200, body = UserRead), (status = 404, description = "Not found")), 
     tag = "Users", 
-    operation_id = "getUser",
+    operation_id = "getMe",
     security(
         ("bearerAuth" = [])
     )
 )]
-pub async fn get_user(
+pub async fn get_me(
     State(state): State<AppState>,
-    Path(uid): Path<Uuid>,
+    Extension(auth): Extension<AuthContext>,
 ) -> Result<Json<UserRead>, AppError> {
+    let user_uid = auth.user_uid;
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
-    let user = UserRepo::get(&mut tx, uid).await.ok();
+    let user = UserRepo::get(&mut tx, user_uid).await.ok();
     tx.commit().await.map_err(|e| AppError::from(e))?;
 
     match user {
@@ -118,6 +117,7 @@ pub async fn get_user(
     }
 }
 
+// TODO: restrict to admin users or the user themselves
 #[derive(Deserialize, ToSchema)]
 pub struct UpdateUserPayload {
     pub email: Option<String>,

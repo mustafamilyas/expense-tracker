@@ -15,7 +15,7 @@ use crate::{
 
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
-        .route("/categories/groups/{group_uid}", axum::routing::get(list))
+        .route("/groups/{group_uid}/categories", axum::routing::get(list))
         .route("/categories", axum::routing::post(create))
         .route(
             "/categories/{uid}",
@@ -25,7 +25,7 @@ pub fn router() -> axum::Router<AppState> {
 
 #[utoipa::path(
     get, 
-    path = "/categories/groups/{group_uid}", 
+    path = "/groups/{group_uid}/categories", 
     params(("group_uid" = Uuid, Path)),
     responses((status = 200, body = [Category])), 
     tag = "Categories", 

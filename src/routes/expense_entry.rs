@@ -7,7 +7,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
-    auth::{AuthContext, AuthSource},
+    auth::{AuthContext, group_guard::group_guard},
     error::AppError,
     repos::expense_entry::{
         CreateExpenseEntryDbPayload, ExpenseEntry, ExpenseEntryRepo, UpdateExpenseEntryDbPayload,
@@ -18,8 +18,12 @@ use crate::{
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
         .route(
-            "/",
-            axum::routing::get(list_expense_entries).post(create_expense_entry),
+            "/expense-entries",
+            axum::routing::post(create_expense_entry),
+        )
+        .route(
+            "/groups/{group_uid}/expense-entries",
+            axum::routing::get(list_expense_entries),
         )
         .route(
             "/{uid}",
@@ -29,12 +33,15 @@ pub fn router() -> axum::Router<AppState> {
         )
 }
 
-#[utoipa::path(get, path = "/expense-entries", responses((status = 200, body = [ExpenseEntry])), tag = "Expense Entries", operation_id = "listExpenseEntries", security(("bearerAuth" = [])))]
+#[utoipa::path(get, path = "/groups/{group_uid}/expense-entries", responses((status = 200, body = [ExpenseEntry])), tag = "Expense Entries", operation_id = "listExpenseEntries", security(("bearerAuth" = [])))]
 pub async fn list_expense_entries(
     State(state): State<AppState>,
+    Extension(auth): Extension<AuthContext>,
+    Path(group_uid): Path<Uuid>,
 ) -> Result<Json<Vec<ExpenseEntry>>, AppError> {
+    group_guard(&auth, group_uid, &state.db_pool).await?;
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
-    let res = ExpenseEntryRepo::list(&mut tx).await?;
+    let res = ExpenseEntryRepo::list_by_group(&mut tx, group_uid).await?;
     tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(Json(res))
 }
@@ -53,9 +60,7 @@ pub async fn create_expense_entry(
     Extension(auth): Extension<AuthContext>,
     Json(payload): Json<CreateExpenseEntryPayload>,
 ) -> Result<Json<ExpenseEntry>, AppError> {
-    if matches!(auth.source, AuthSource::Chat) && auth.group_uid != Some(payload.group_uid) {
-        return Err(AppError::Unauthorized("Group scope mismatch".into()));
-    }
+    group_guard(&auth, payload.group_uid, &state.db_pool).await?;
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let created = ExpenseEntryRepo::create_expense_entry(
         &mut tx,
@@ -74,10 +79,12 @@ pub async fn create_expense_entry(
 #[utoipa::path(get, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "getExpenseEntry", security(("bearerAuth" = [])))]
 pub async fn get_expense_entry(
     State(state): State<AppState>,
+    Extension(auth): Extension<AuthContext>,
     Path(uid): Path<Uuid>,
 ) -> Result<Json<ExpenseEntry>, AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let rec = ExpenseEntryRepo::get(&mut tx, uid).await?;
+    group_guard(&auth, rec.group_uid, &state.db_pool).await?;
     tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(Json(rec))
 }
@@ -92,10 +99,13 @@ pub struct UpdateExpenseEntryPayload {
 #[utoipa::path(put, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), request_body = UpdateExpenseEntryPayload, responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "updateExpenseEntry", security(("bearerAuth" = [])))]
 pub async fn update_expense_entry(
     State(state): State<AppState>,
+    Extension(auth): Extension<AuthContext>,
     Path(uid): Path<Uuid>,
     Json(payload): Json<UpdateExpenseEntryPayload>,
 ) -> Result<Json<ExpenseEntry>, AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let prev_rec = ExpenseEntryRepo::get(&mut tx, uid).await?;
+    group_guard(&auth, prev_rec.group_uid, &state.db_pool).await?;
     let updated = ExpenseEntryRepo::update(
         &mut tx,
         uid,
@@ -113,9 +123,12 @@ pub async fn update_expense_entry(
 #[utoipa::path(delete, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Expense Entries", operation_id = "deleteExpenseEntry", security(("bearerAuth" = [])))]
 pub async fn delete_expense_entry(
     State(state): State<AppState>,
+    Extension(auth): Extension<AuthContext>,
     Path(uid): Path<Uuid>,
 ) -> Result<(), AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let prev_rec = ExpenseEntryRepo::get(&mut tx, uid).await?;
+    group_guard(&auth, prev_rec.group_uid, &state.db_pool).await?;
     ExpenseEntryRepo::delete(&mut tx, uid).await?;
     tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(())

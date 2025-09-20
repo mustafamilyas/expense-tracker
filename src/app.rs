@@ -9,19 +9,22 @@ use axum::middleware;
 pub fn build_router(app_state: AppState) -> Router {
     let auth_state = app_state.clone();
     Router::new()
-        .nest("/expense-entries", routes::expense_entry::router())
-        .nest("/categories-aliases", routes::categories_aliases::router())
-        .nest("/budgets", routes::budgets::router())
-        .nest("/chat-bind-requests", routes::chat_bind_requests::router())
-        .nest("/chat-bindings", routes::chat_bindings::router())
-        .nest("/group-members", routes::group_members::router())
+        // .nest("/chat-bind-requests", routes::chat_bind_requests::router())
+        // .merge("/group-members", routes::group_members::router())
         .route("/health", get(routes::health::health))
         .route("/version", get(routes::version::version))
+        .merge(routes::chat_bindings::router())
+        .merge(routes::expense_entry::router())
+        .merge(routes::categories_aliases::router())
+        .merge(routes::budgets::router())
         .merge(routes::categories::router())
         .merge(routes::users::router())
         .merge(routes::expense_groups::router())
         .merge(SwaggerUi::new("/docs").url("/api-doc/openapi.json", ApiDoc::openapi()))
         .with_state(app_state)
-        .layer(middleware::from_fn_with_state(auth_state, crate::auth::auth_middleware))
+        .layer(middleware::from_fn_with_state(
+            auth_state,
+            crate::auth::auth_middleware,
+        ))
         .layer(tower_http::trace::TraceLayer::new_for_http())
 }

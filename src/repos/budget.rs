@@ -46,6 +46,21 @@ impl BudgetRepo {
         Ok(rows)
     }
 
+    pub async fn list_by_group(
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        group_uid: Uuid,
+    ) -> Result<Vec<Budget>, DatabaseError> {
+        let rows = sqlx::query_as::<_, Budget>(
+            r#"SELECT uid, group_uid, category_uid, amount, period_year, period_month FROM budgets
+               WHERE group_uid = $1
+               ORDER BY uid"#,
+        )
+        .bind(group_uid)
+        .fetch_all(tx.as_mut())
+        .await?;
+        Ok(rows)
+    }
+
     pub async fn get(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         uid: Uuid,

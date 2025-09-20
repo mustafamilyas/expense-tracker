@@ -39,6 +39,19 @@ impl ExpenseGroupRepo {
         Ok(rows)
     }
 
+    pub async fn get_all_by_owner(
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        owner: Uuid,
+    ) -> Result<Vec<ExpenseGroup>, DatabaseError> {
+        let rows = sqlx::query_as::<_, ExpenseGroup>(
+            r#"SELECT uid, name, owner, created_at FROM expense_groups WHERE owner = $1 ORDER BY created_at DESC"#,
+        )
+        .bind(owner)
+        .fetch_all(tx.as_mut())
+        .await?;
+        Ok(rows)
+    }
+
     pub async fn get(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         uid: Uuid,

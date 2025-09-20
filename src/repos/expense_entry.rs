@@ -90,6 +90,20 @@ impl ExpenseEntryRepo {
         Ok(recs)
     }
 
+    pub async fn list_by_group(
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        group_uid: Uuid,
+    ) -> Result<Vec<ExpenseEntry>, DatabaseError> {
+        let recs = sqlx::query_as::<_, ExpenseEntry>(
+            r#"SELECT uid, price, product, created_by, group_uid, category_uid, created_at, updated_at
+               FROM expense_entries WHERE group_uid = $1 ORDER BY created_at DESC"#
+        )
+        .bind(group_uid)
+        .fetch_all(tx.as_mut())
+        .await?;
+        Ok(recs)
+    }
+
     pub async fn get(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         uid: Uuid,

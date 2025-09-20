@@ -7,7 +7,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
-    auth::{AuthContext, AuthSource},
+    auth::{AuthContext, group_guard::group_guard},
     error::AppError,
     repos::budget::{Budget, BudgetRepo, CreateBudgetDbPayload, UpdateBudgetDbPayload},
     types::AppState,
@@ -15,17 +15,23 @@ use crate::{
 
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
-        .route("/", axum::routing::get(list).post(create))
+        .route("/budgets", axum::routing::post(create))
+        .route("/budgets/group/{group_uid}", axum::routing::get(list))
         .route(
-            "/{uid}",
+            "/budgets/{uid}",
             axum::routing::get(get).put(update).delete(delete_),
         )
 }
 
-#[utoipa::path(get, path = "/budgets", responses((status = 200, body = [Budget])), tag = "Budgets", operation_id = "listBudgets", security(("bearerAuth" = [])))]
-pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Budget>>, AppError> {
+#[utoipa::path(get, path = "/budgets/group/{group_uid}", params(("group_uid" = Uuid, Path)), responses((status = 200, body = [Budget])), tag = "Budgets", operation_id = "listBudgets", security(("bearerAuth" = [])))]
+pub async fn list(
+    State(state): State<AppState>,
+    Path(group_uid): Path<Uuid>,
+    Extension(auth): Extension<AuthContext>,
+) -> Result<Json<Vec<Budget>>, AppError> {
+    group_guard(&auth, group_uid, &state.db_pool).await?;
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
-    let res = BudgetRepo::list(&mut tx).await?;
+    let res = BudgetRepo::list_by_group(&mut tx, group_uid).await?;
     tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(Json(res))
 }
@@ -34,9 +40,11 @@ pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Budget>>, Ap
 pub async fn get(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
+    Extension(auth): Extension<AuthContext>,
 ) -> Result<Json<Budget>, AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let res = BudgetRepo::get(&mut tx, uid).await?;
+    group_guard(&auth, res.group_uid, &state.db_pool).await?;
     tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(Json(res))
 }
@@ -56,9 +64,7 @@ pub async fn create(
     Extension(auth): Extension<AuthContext>,
     Json(payload): Json<CreateBudgetPayload>,
 ) -> Result<Json<Budget>, AppError> {
-    if matches!(auth.source, AuthSource::Chat) && auth.group_uid != Some(payload.group_uid) {
-        return Err(AppError::Unauthorized("Group scope mismatch".into()));
-    }
+    group_guard(&auth, payload.group_uid, &state.db_pool).await?;
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
     let created = BudgetRepo::create(
         &mut tx,
@@ -85,10 +91,13 @@ pub struct UpdateBudgetPayload {
 #[utoipa::path(put, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), request_body = UpdateBudgetPayload, responses((status = 200, body = Budget)), tag = "Budgets", operation_id = "updateBudget", security(("bearerAuth" = [])))]
 pub async fn update(
     State(state): State<AppState>,
+    Extension(auth): Extension<AuthContext>,
     Path(uid): Path<Uuid>,
     Json(payload): Json<UpdateBudgetPayload>,
 ) -> Result<Json<Budget>, AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let prev_rec = BudgetRepo::get(&mut tx, uid).await?;
+    group_guard(&auth, prev_rec.group_uid, &state.db_pool).await?;
     let updated = BudgetRepo::update(
         &mut tx,
         uid,
@@ -104,8 +113,14 @@ pub async fn update(
 }
 
 #[utoipa::path(delete, path = "/budgets/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Budgets", operation_id = "deleteBudget", security(("bearerAuth" = [])))]
-pub async fn delete_(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<(), AppError> {
+pub async fn delete_(
+    State(state): State<AppState>,
+    Path(uid): Path<Uuid>,
+    Extension(auth): Extension<AuthContext>,
+) -> Result<(), AppError> {
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let budget = BudgetRepo::get(&mut tx, uid).await?;
+    group_guard(&auth, budget.group_uid, &state.db_pool).await?;
     BudgetRepo::delete(&mut tx, uid).await?;
     tx.commit().await.map_err(|e| AppError::from(e))?;
     Ok(())

@@ -40,6 +40,19 @@ impl CategoryAliasRepo {
         Ok(rows)
     }
 
+    pub async fn list_by_category(
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        category_uid: Uuid,
+    ) -> Result<Vec<CategoryAlias>, DatabaseError> {
+        let rows = sqlx::query_as::<_, CategoryAlias>(
+            r#"SELECT alias_uid, group_uid, alias, category_uid FROM categories_aliases WHERE category_uid = $1 ORDER BY alias"#
+        )
+        .bind(category_uid)
+        .fetch_all(tx.as_mut())
+        .await?;
+        Ok(rows)
+    }
+
     pub async fn get(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         alias_uid: Uuid,

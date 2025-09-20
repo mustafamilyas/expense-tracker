@@ -1,15 +1,12 @@
 use axum::{
-    Json,
-    extract::{Path, State},
+    extract::{Path, State}, Extension, Json
 };
 use uuid::Uuid;
 
 use crate::{
-    error::AppError,
-    repos::expense_group::{
+    auth::{ group_guard::group_guard, AuthContext}, error::AppError, repos::expense_group::{
         CreateExpenseGroupPayload, ExpenseGroup, ExpenseGroupRepo, UpdateExpenseGroupPayload,
-    },
-    types::{AppState, DeleteResponse},
+    }, types::{AppState, DeleteResponse}
 };
 
 pub fn router() -> axum::Router<AppState> {
@@ -30,13 +27,16 @@ pub fn router() -> axum::Router<AppState> {
     operation_id = "listExpenseGroups",
     security(("bearerAuth" = []))
 )]
-pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<ExpenseGroup>>, AppError> {
+pub async fn list(State(state): State<AppState>,
+    Extension(auth): Extension<AuthContext>
+) -> Result<Json<Vec<ExpenseGroup>>, AppError> {
+
     let mut tx = state
         .db_pool
         .begin()
         .await
         .map_err(|e| AppError::from(e))?;
-    let res = ExpenseGroupRepo::list(&mut tx).await?;
+    let res = ExpenseGroupRepo::get_all_by_owner(&mut tx, auth.user_uid).await?;
     tx.commit()
         .await
         .map_err(|e| AppError::from(e))?;
@@ -55,7 +55,9 @@ pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<ExpenseGroup
 pub async fn get(
     State(state): State<AppState>,
     Path(uid): Path<Uuid>,
+    Extension(auth): Extension<AuthContext>,
 ) -> Result<Json<ExpenseGroup>, AppError> {
+    group_guard(&auth, uid, &state.db_pool).await?;
     let mut tx = state
         .db_pool
         .begin()
@@ -113,9 +115,11 @@ pub async fn create(
 )]
 pub async fn update(
     State(state): State<AppState>,
+    Extension(auth): Extension<AuthContext>,
     Path(uid): Path<Uuid>,
     Json(payload): Json<UpdateExpenseGroupPayload>,
 ) -> Result<Json<ExpenseGroup>, AppError> {
+    group_guard(&auth, uid, &state.db_pool).await?;
     let mut tx = state
         .db_pool
         .begin()
@@ -145,7 +149,12 @@ pub async fn update(
     operation_id = "deleteExpenseGroup",
     security(("bearerAuth" = []))
 )]
-pub async fn delete_(State(state): State<AppState>, Path(uid): Path<Uuid>) -> Result<Json<DeleteResponse>, AppError> {
+pub async fn delete_(
+    State(state): State<AppState>, 
+    Path(uid): Path<Uuid>,
+    Extension(auth): Extension<AuthContext>,
+) -> Result<Json<DeleteResponse>, AppError> {
+    group_guard(&auth, uid, &state.db_pool).await?;
     let mut tx = state
         .db_pool
         .begin()
