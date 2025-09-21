@@ -1,7 +1,10 @@
 use std::{fs, path::Path};
 
 use anyhow::{Context, Result};
-use argon2::{password_hash::{PasswordHasher, SaltString, rand_core::OsRng}, Argon2};
+use argon2::{
+    Argon2,
+    password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
+};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -49,7 +52,7 @@ struct SeedExpenseEntry {
     group_uid: Uuid,
     #[serde(default)]
     category_uid: Option<Uuid>,
-    #[serde(default = "default_created_by")] 
+    #[serde(default = "default_created_by")]
     created_by: String,
     #[serde(default)]
     created_at: Option<DateTime<Utc>>, // optional in JSON; DB defaults will handle if None
@@ -57,7 +60,9 @@ struct SeedExpenseEntry {
     updated_at: Option<DateTime<Utc>>,
 }
 
-fn default_created_by() -> String { "seed".to_string() }
+fn default_created_by() -> String {
+    "seed".to_string()
+}
 
 #[derive(Deserialize, Debug, Clone)]
 struct SeedBudget {
@@ -105,11 +110,55 @@ struct SeedChatBinding {
     revoked_at: Option<DateTime<Utc>>,
 }
 
+#[derive(Deserialize, Debug, Clone)]
+struct SeedSubscription {
+    id: Option<Uuid>,
+    user_uid: Uuid,
+    tier: String, // 'free' | 'personal' | 'family' | 'team' | 'enterprise'
+    #[serde(default = "default_status")]
+    status: String, // 'active' | 'inactive' | 'cancelled' | 'expired'
+    #[serde(default)]
+    current_period_start: Option<DateTime<Utc>>,
+    #[serde(default)]
+    current_period_end: Option<DateTime<Utc>>,
+    #[serde(default)]
+    cancel_at_period_end: bool,
+    #[serde(default)]
+    created_at: Option<DateTime<Utc>>,
+    #[serde(default)]
+    updated_at: Option<DateTime<Utc>>,
+}
+
+fn default_status() -> String {
+    "active".to_string()
+}
+
+#[derive(Deserialize, Debug, Clone)]
+struct SeedUserUsage {
+    id: Option<Uuid>,
+    user_uid: Uuid,
+    period_start: chrono::NaiveDate,
+    period_end: chrono::NaiveDate,
+    #[serde(default)]
+    groups_count: i32,
+    #[serde(default)]
+    total_expenses: i32,
+    #[serde(default)]
+    total_members: i32,
+    #[serde(default)]
+    created_at: Option<DateTime<Utc>>,
+    #[serde(default)]
+    updated_at: Option<DateTime<Utc>>,
+}
+
 async fn seed_users(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
     let path = seeds_dir.join("users.json");
-    if !path.exists() { return Ok(()); }
+    if !path.exists() {
+        return Ok(());
+    }
     let data = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let mut users: Vec<SeedUser> = serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
+    let mut users: Vec<SeedUser> =
+        serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
 
     for u in users.iter_mut() {
         let uid = u.uid.unwrap_or_else(Uuid::new_v4);
@@ -139,9 +188,12 @@ async fn seed_users(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
 
 async fn seed_expense_groups(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
     let path = seeds_dir.join("expense_groups.json");
-    if !path.exists() { return Ok(()); }
+    if !path.exists() {
+        return Ok(());
+    }
     let data = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let groups: Vec<SeedExpenseGroup> = serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
+    let groups: Vec<SeedExpenseGroup> =
+        serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
 
     for g in groups {
         let uid = g.uid.unwrap_or_else(Uuid::new_v4);
@@ -162,9 +214,12 @@ async fn seed_expense_groups(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
 
 async fn seed_categories(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
     let path = seeds_dir.join("categories.json");
-    if !path.exists() { return Ok(()); }
+    if !path.exists() {
+        return Ok(());
+    }
     let data = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let cats: Vec<SeedCategory> = serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
+    let cats: Vec<SeedCategory> =
+        serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
 
     for c in cats {
         let uid = c.uid.unwrap_or_else(Uuid::new_v4);
@@ -186,9 +241,12 @@ async fn seed_categories(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
 
 async fn seed_category_aliases(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
     let path = seeds_dir.join("categories_aliases.json");
-    if !path.exists() { return Ok(()); }
+    if !path.exists() {
+        return Ok(());
+    }
     let data = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let aliases: Vec<SeedCategoryAlias> = serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
+    let aliases: Vec<SeedCategoryAlias> =
+        serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
 
     for a in aliases {
         let alias_uid = a.alias_uid.unwrap_or_else(Uuid::new_v4);
@@ -210,9 +268,12 @@ async fn seed_category_aliases(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
 
 async fn seed_expense_entries(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
     let path = seeds_dir.join("expense_entries.json");
-    if !path.exists() { return Ok(()); }
+    if !path.exists() {
+        return Ok(());
+    }
     let data = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let entries: Vec<SeedExpenseEntry> = serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
+    let entries: Vec<SeedExpenseEntry> =
+        serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
 
     for e in entries {
         let uid = e.uid.unwrap_or_else(Uuid::new_v4);
@@ -238,9 +299,12 @@ async fn seed_expense_entries(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
 
 async fn seed_budgets(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
     let path = seeds_dir.join("budgets.json");
-    if !path.exists() { return Ok(()); }
+    if !path.exists() {
+        return Ok(());
+    }
     let data = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let budgets: Vec<SeedBudget> = serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
+    let budgets: Vec<SeedBudget> =
+        serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
 
     for b in budgets {
         let uid = b.uid.unwrap_or_else(Uuid::new_v4);
@@ -264,9 +328,12 @@ async fn seed_budgets(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
 
 async fn seed_group_members(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
     let path = seeds_dir.join("group_members.json");
-    if !path.exists() { return Ok(()); }
+    if !path.exists() {
+        return Ok(());
+    }
     let data = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let members: Vec<SeedGroupMember> = serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
+    let members: Vec<SeedGroupMember> =
+        serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
 
     for m in members {
         let id = m.id.unwrap_or_else(Uuid::new_v4);
@@ -288,9 +355,12 @@ async fn seed_group_members(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
 
 async fn seed_chat_bind_requests(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
     let path = seeds_dir.join("chat_bind_requests.json");
-    if !path.exists() { return Ok(()); }
+    if !path.exists() {
+        return Ok(());
+    }
     let data = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let reqs: Vec<SeedChatBindRequest> = serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
+    let reqs: Vec<SeedChatBindRequest> =
+        serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
 
     for r in reqs {
         let id = r.id.unwrap_or_else(Uuid::new_v4);
@@ -314,9 +384,12 @@ async fn seed_chat_bind_requests(pool: &PgPool, seeds_dir: &Path) -> Result<()> 
 
 async fn seed_chat_bindings(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
     let path = seeds_dir.join("chat_bindings.json");
-    if !path.exists() { return Ok(()); }
+    if !path.exists() {
+        return Ok(());
+    }
     let data = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let binds: Vec<SeedChatBinding> = serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
+    let binds: Vec<SeedChatBinding> =
+        serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
 
     for b in binds {
         let id = b.id.unwrap_or_else(Uuid::new_v4);
@@ -342,6 +415,70 @@ async fn seed_chat_bindings(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
     Ok(())
 }
 
+async fn seed_subscriptions(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
+    let path = seeds_dir.join("subscriptions.json");
+    if !path.exists() {
+        return Ok(());
+    }
+    let data = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    let subs: Vec<SeedSubscription> =
+        serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
+
+    for s in subs {
+        let id = s.id.unwrap_or_else(Uuid::new_v4);
+        sqlx::query(
+            r#"INSERT INTO subscriptions (id, user_uid, tier, status, current_period_start, current_period_end, cancel_at_period_end, created_at, updated_at)
+               VALUES ($1, $2, CAST($3 AS subscription_tier), $4, $5, $6, $7, COALESCE($8, now()), COALESCE($9, now()))
+               ON CONFLICT DO NOTHING"#,
+        )
+        .bind(id)
+        .bind(s.user_uid)
+        .bind(&s.tier)
+        .bind(&s.status)
+        .bind(s.current_period_start)
+        .bind(s.current_period_end)
+        .bind(s.cancel_at_period_end)
+        .bind(s.created_at)
+        .bind(s.updated_at)
+        .execute(pool)
+        .await
+        .with_context(|| format!("inserting subscription {}", id))?;
+    }
+    Ok(())
+}
+
+async fn seed_user_usage(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
+    let path = seeds_dir.join("user_usage.json");
+    if !path.exists() {
+        return Ok(());
+    }
+    let data = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    let usages: Vec<SeedUserUsage> =
+        serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
+
+    for u in usages {
+        let id = u.id.unwrap_or_else(Uuid::new_v4);
+        sqlx::query(
+            r#"INSERT INTO user_usage (id, user_uid, period_start, period_end, groups_count, total_expenses, total_members, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, now()), COALESCE($9, now()))
+               ON CONFLICT DO NOTHING"#,
+        )
+        .bind(id)
+        .bind(u.user_uid)
+        .bind(u.period_start)
+        .bind(u.period_end)
+        .bind(u.groups_count)
+        .bind(u.total_expenses)
+        .bind(u.total_members)
+        .bind(u.created_at)
+        .bind(u.updated_at)
+        .execute(pool)
+        .await
+        .with_context(|| format!("inserting user_usage {}", id))?;
+    }
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // Determine DB URL
@@ -359,18 +496,31 @@ async fn main() -> Result<()> {
         .connect(&db_url)
         .await?;
 
+    println!("Connected to database, starting seeding...");
+
     // Seed in dependency order
     seed_users(&pool, seeds_dir).await?;
+    println!("Seeding users complete.");
     seed_expense_groups(&pool, seeds_dir).await?;
+    println!("Seeding expense groups complete.");
     seed_categories(&pool, seeds_dir).await?;
+    println!("Seeding categories complete.");
     seed_category_aliases(&pool, seeds_dir).await?;
+    println!("Seeding category aliases complete.");
     seed_expense_entries(&pool, seeds_dir).await?;
+    println!("Seeding expense entries complete.");
     seed_budgets(&pool, seeds_dir).await?;
+    println!("Seeding budgets complete.");
     seed_group_members(&pool, seeds_dir).await?;
+    println!("Seeding group members complete.");
     seed_chat_bind_requests(&pool, seeds_dir).await?;
+    println!("Seeding chat bind requests complete.");
     seed_chat_bindings(&pool, seeds_dir).await?;
-    // Chat-related tables use enums; provide empty seeds or extend later if needed.
-
+    println!("Seeding chat bindings complete.");
+    seed_subscriptions(&pool, seeds_dir).await?;
+    println!("Seeding subscriptions complete.");
+    seed_user_usage(&pool, seeds_dir).await?;
+    println!("Seeding user usage complete.");
     println!("Seeding complete.");
     Ok(())
 }

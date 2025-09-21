@@ -1,8 +1,602 @@
 [
   {
-    "uid": "33333333-3333-3333-3333-333333333333",
-    "group_uid": "22222222-2222-2222-2222-222222222222",
-    "name": "Groceries",
-    "description": "Food and supplies"
+    "uid": "22222222-2222-2222-2222-000000000001",
+    "group_uid": "11111111-1111-1111-1111-000000000001",
+    "name": "Category 1",
+    "description": "Description for Category 1"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000002",
+    "group_uid": "11111111-1111-1111-1111-000000000002",
+    "name": "Category 2",
+    "description": "Description for Category 2"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000003",
+    "group_uid": "11111111-1111-1111-1111-000000000003",
+    "name": "Category 3",
+    "description": "Description for Category 3"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000004",
+    "group_uid": "11111111-1111-1111-1111-000000000004",
+    "name": "Category 4",
+    "description": "Description for Category 4"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000005",
+    "group_uid": "11111111-1111-1111-1111-000000000005",
+    "name": "Category 5",
+    "description": "Description for Category 5"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000006",
+    "group_uid": "11111111-1111-1111-1111-000000000006",
+    "name": "Category 6",
+    "description": "Description for Category 6"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000007",
+    "group_uid": "11111111-1111-1111-1111-000000000007",
+    "name": "Category 7",
+    "description": "Description for Category 7"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000008",
+    "group_uid": "11111111-1111-1111-1111-000000000008",
+    "name": "Category 8",
+    "description": "Description for Category 8"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000009",
+    "group_uid": "11111111-1111-1111-1111-000000000009",
+    "name": "Category 9",
+    "description": "Description for Category 9"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000010",
+    "group_uid": "11111111-1111-1111-1111-000000000010",
+    "name": "Category 10",
+    "description": "Description for Category 10"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000011",
+    "group_uid": "11111111-1111-1111-1111-000000000011",
+    "name": "Category 11",
+    "description": "Description for Category 11"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000012",
+    "group_uid": "11111111-1111-1111-1111-000000000012",
+    "name": "Category 12",
+    "description": "Description for Category 12"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000013",
+    "group_uid": "11111111-1111-1111-1111-000000000013",
+    "name": "Category 13",
+    "description": "Description for Category 13"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000014",
+    "group_uid": "11111111-1111-1111-1111-000000000014",
+    "name": "Category 14",
+    "description": "Description for Category 14"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000015",
+    "group_uid": "11111111-1111-1111-1111-000000000015",
+    "name": "Category 15",
+    "description": "Description for Category 15"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000016",
+    "group_uid": "11111111-1111-1111-1111-000000000016",
+    "name": "Category 16",
+    "description": "Description for Category 16"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000017",
+    "group_uid": "11111111-1111-1111-1111-000000000017",
+    "name": "Category 17",
+    "description": "Description for Category 17"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000018",
+    "group_uid": "11111111-1111-1111-1111-000000000018",
+    "name": "Category 18",
+    "description": "Description for Category 18"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000019",
+    "group_uid": "11111111-1111-1111-1111-000000000019",
+    "name": "Category 19",
+    "description": "Description for Category 19"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000020",
+    "group_uid": "11111111-1111-1111-1111-000000000020",
+    "name": "Category 20",
+    "description": "Description for Category 20"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000021",
+    "group_uid": "11111111-1111-1111-1111-000000000021",
+    "name": "Category 21",
+    "description": "Description for Category 21"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000022",
+    "group_uid": "11111111-1111-1111-1111-000000000022",
+    "name": "Category 22",
+    "description": "Description for Category 22"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000023",
+    "group_uid": "11111111-1111-1111-1111-000000000023",
+    "name": "Category 23",
+    "description": "Description for Category 23"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000024",
+    "group_uid": "11111111-1111-1111-1111-000000000024",
+    "name": "Category 24",
+    "description": "Description for Category 24"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000025",
+    "group_uid": "11111111-1111-1111-1111-000000000025",
+    "name": "Category 25",
+    "description": "Description for Category 25"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000026",
+    "group_uid": "11111111-1111-1111-1111-000000000026",
+    "name": "Category 26",
+    "description": "Description for Category 26"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000027",
+    "group_uid": "11111111-1111-1111-1111-000000000027",
+    "name": "Category 27",
+    "description": "Description for Category 27"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000028",
+    "group_uid": "11111111-1111-1111-1111-000000000028",
+    "name": "Category 28",
+    "description": "Description for Category 28"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000029",
+    "group_uid": "11111111-1111-1111-1111-000000000029",
+    "name": "Category 29",
+    "description": "Description for Category 29"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000030",
+    "group_uid": "11111111-1111-1111-1111-000000000030",
+    "name": "Category 30",
+    "description": "Description for Category 30"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000031",
+    "group_uid": "11111111-1111-1111-1111-000000000031",
+    "name": "Category 31",
+    "description": "Description for Category 31"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000032",
+    "group_uid": "11111111-1111-1111-1111-000000000032",
+    "name": "Category 32",
+    "description": "Description for Category 32"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000033",
+    "group_uid": "11111111-1111-1111-1111-000000000033",
+    "name": "Category 33",
+    "description": "Description for Category 33"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000034",
+    "group_uid": "11111111-1111-1111-1111-000000000034",
+    "name": "Category 34",
+    "description": "Description for Category 34"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000035",
+    "group_uid": "11111111-1111-1111-1111-000000000035",
+    "name": "Category 35",
+    "description": "Description for Category 35"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000036",
+    "group_uid": "11111111-1111-1111-1111-000000000036",
+    "name": "Category 36",
+    "description": "Description for Category 36"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000037",
+    "group_uid": "11111111-1111-1111-1111-000000000037",
+    "name": "Category 37",
+    "description": "Description for Category 37"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000038",
+    "group_uid": "11111111-1111-1111-1111-000000000038",
+    "name": "Category 38",
+    "description": "Description for Category 38"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000039",
+    "group_uid": "11111111-1111-1111-1111-000000000039",
+    "name": "Category 39",
+    "description": "Description for Category 39"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000040",
+    "group_uid": "11111111-1111-1111-1111-000000000040",
+    "name": "Category 40",
+    "description": "Description for Category 40"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000041",
+    "group_uid": "11111111-1111-1111-1111-000000000041",
+    "name": "Category 41",
+    "description": "Description for Category 41"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000042",
+    "group_uid": "11111111-1111-1111-1111-000000000042",
+    "name": "Category 42",
+    "description": "Description for Category 42"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000043",
+    "group_uid": "11111111-1111-1111-1111-000000000043",
+    "name": "Category 43",
+    "description": "Description for Category 43"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000044",
+    "group_uid": "11111111-1111-1111-1111-000000000044",
+    "name": "Category 44",
+    "description": "Description for Category 44"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000045",
+    "group_uid": "11111111-1111-1111-1111-000000000045",
+    "name": "Category 45",
+    "description": "Description for Category 45"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000046",
+    "group_uid": "11111111-1111-1111-1111-000000000046",
+    "name": "Category 46",
+    "description": "Description for Category 46"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000047",
+    "group_uid": "11111111-1111-1111-1111-000000000047",
+    "name": "Category 47",
+    "description": "Description for Category 47"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000048",
+    "group_uid": "11111111-1111-1111-1111-000000000048",
+    "name": "Category 48",
+    "description": "Description for Category 48"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000049",
+    "group_uid": "11111111-1111-1111-1111-000000000049",
+    "name": "Category 49",
+    "description": "Description for Category 49"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000050",
+    "group_uid": "11111111-1111-1111-1111-000000000050",
+    "name": "Category 50",
+    "description": "Description for Category 50"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000051",
+    "group_uid": "11111111-1111-1111-1111-000000000051",
+    "name": "Category 51",
+    "description": "Description for Category 51"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000052",
+    "group_uid": "11111111-1111-1111-1111-000000000052",
+    "name": "Category 52",
+    "description": "Description for Category 52"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000053",
+    "group_uid": "11111111-1111-1111-1111-000000000053",
+    "name": "Category 53",
+    "description": "Description for Category 53"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000054",
+    "group_uid": "11111111-1111-1111-1111-000000000054",
+    "name": "Category 54",
+    "description": "Description for Category 54"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000055",
+    "group_uid": "11111111-1111-1111-1111-000000000055",
+    "name": "Category 55",
+    "description": "Description for Category 55"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000056",
+    "group_uid": "11111111-1111-1111-1111-000000000056",
+    "name": "Category 56",
+    "description": "Description for Category 56"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000057",
+    "group_uid": "11111111-1111-1111-1111-000000000057",
+    "name": "Category 57",
+    "description": "Description for Category 57"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000058",
+    "group_uid": "11111111-1111-1111-1111-000000000058",
+    "name": "Category 58",
+    "description": "Description for Category 58"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000059",
+    "group_uid": "11111111-1111-1111-1111-000000000059",
+    "name": "Category 59",
+    "description": "Description for Category 59"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000060",
+    "group_uid": "11111111-1111-1111-1111-000000000060",
+    "name": "Category 60",
+    "description": "Description for Category 60"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000061",
+    "group_uid": "11111111-1111-1111-1111-000000000061",
+    "name": "Category 61",
+    "description": "Description for Category 61"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000062",
+    "group_uid": "11111111-1111-1111-1111-000000000062",
+    "name": "Category 62",
+    "description": "Description for Category 62"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000063",
+    "group_uid": "11111111-1111-1111-1111-000000000063",
+    "name": "Category 63",
+    "description": "Description for Category 63"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000064",
+    "group_uid": "11111111-1111-1111-1111-000000000064",
+    "name": "Category 64",
+    "description": "Description for Category 64"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000065",
+    "group_uid": "11111111-1111-1111-1111-000000000065",
+    "name": "Category 65",
+    "description": "Description for Category 65"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000066",
+    "group_uid": "11111111-1111-1111-1111-000000000066",
+    "name": "Category 66",
+    "description": "Description for Category 66"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000067",
+    "group_uid": "11111111-1111-1111-1111-000000000067",
+    "name": "Category 67",
+    "description": "Description for Category 67"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000068",
+    "group_uid": "11111111-1111-1111-1111-000000000068",
+    "name": "Category 68",
+    "description": "Description for Category 68"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000069",
+    "group_uid": "11111111-1111-1111-1111-000000000069",
+    "name": "Category 69",
+    "description": "Description for Category 69"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000070",
+    "group_uid": "11111111-1111-1111-1111-000000000070",
+    "name": "Category 70",
+    "description": "Description for Category 70"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000071",
+    "group_uid": "11111111-1111-1111-1111-000000000071",
+    "name": "Category 71",
+    "description": "Description for Category 71"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000072",
+    "group_uid": "11111111-1111-1111-1111-000000000072",
+    "name": "Category 72",
+    "description": "Description for Category 72"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000073",
+    "group_uid": "11111111-1111-1111-1111-000000000073",
+    "name": "Category 73",
+    "description": "Description for Category 73"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000074",
+    "group_uid": "11111111-1111-1111-1111-000000000074",
+    "name": "Category 74",
+    "description": "Description for Category 74"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000075",
+    "group_uid": "11111111-1111-1111-1111-000000000075",
+    "name": "Category 75",
+    "description": "Description for Category 75"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000076",
+    "group_uid": "11111111-1111-1111-1111-000000000076",
+    "name": "Category 76",
+    "description": "Description for Category 76"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000077",
+    "group_uid": "11111111-1111-1111-1111-000000000077",
+    "name": "Category 77",
+    "description": "Description for Category 77"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000078",
+    "group_uid": "11111111-1111-1111-1111-000000000078",
+    "name": "Category 78",
+    "description": "Description for Category 78"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000079",
+    "group_uid": "11111111-1111-1111-1111-000000000079",
+    "name": "Category 79",
+    "description": "Description for Category 79"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000080",
+    "group_uid": "11111111-1111-1111-1111-000000000080",
+    "name": "Category 80",
+    "description": "Description for Category 80"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000081",
+    "group_uid": "11111111-1111-1111-1111-000000000081",
+    "name": "Category 81",
+    "description": "Description for Category 81"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000082",
+    "group_uid": "11111111-1111-1111-1111-000000000082",
+    "name": "Category 82",
+    "description": "Description for Category 82"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000083",
+    "group_uid": "11111111-1111-1111-1111-000000000083",
+    "name": "Category 83",
+    "description": "Description for Category 83"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000084",
+    "group_uid": "11111111-1111-1111-1111-000000000084",
+    "name": "Category 84",
+    "description": "Description for Category 84"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000085",
+    "group_uid": "11111111-1111-1111-1111-000000000085",
+    "name": "Category 85",
+    "description": "Description for Category 85"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000086",
+    "group_uid": "11111111-1111-1111-1111-000000000086",
+    "name": "Category 86",
+    "description": "Description for Category 86"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000087",
+    "group_uid": "11111111-1111-1111-1111-000000000087",
+    "name": "Category 87",
+    "description": "Description for Category 87"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000088",
+    "group_uid": "11111111-1111-1111-1111-000000000088",
+    "name": "Category 88",
+    "description": "Description for Category 88"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000089",
+    "group_uid": "11111111-1111-1111-1111-000000000089",
+    "name": "Category 89",
+    "description": "Description for Category 89"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000090",
+    "group_uid": "11111111-1111-1111-1111-000000000090",
+    "name": "Category 90",
+    "description": "Description for Category 90"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000091",
+    "group_uid": "11111111-1111-1111-1111-000000000091",
+    "name": "Category 91",
+    "description": "Description for Category 91"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000092",
+    "group_uid": "11111111-1111-1111-1111-000000000092",
+    "name": "Category 92",
+    "description": "Description for Category 92"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000093",
+    "group_uid": "11111111-1111-1111-1111-000000000093",
+    "name": "Category 93",
+    "description": "Description for Category 93"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000094",
+    "group_uid": "11111111-1111-1111-1111-000000000094",
+    "name": "Category 94",
+    "description": "Description for Category 94"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000095",
+    "group_uid": "11111111-1111-1111-1111-000000000095",
+    "name": "Category 95",
+    "description": "Description for Category 95"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000096",
+    "group_uid": "11111111-1111-1111-1111-000000000096",
+    "name": "Category 96",
+    "description": "Description for Category 96"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000097",
+    "group_uid": "11111111-1111-1111-1111-000000000097",
+    "name": "Category 97",
+    "description": "Description for Category 97"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000098",
+    "group_uid": "11111111-1111-1111-1111-000000000098",
+    "name": "Category 98",
+    "description": "Description for Category 98"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000099",
+    "group_uid": "11111111-1111-1111-1111-000000000099",
+    "name": "Category 99",
+    "description": "Description for Category 99"
+  },
+  {
+    "uid": "22222222-2222-2222-2222-000000000100",
+    "group_uid": "11111111-1111-1111-1111-000000000100",
+    "name": "Category 100",
+    "description": "Description for Category 100"
   }
 ]

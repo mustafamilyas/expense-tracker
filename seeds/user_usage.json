@@ -1,0 +1,902 @@
+[
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000001",
+    "user_uid": "00000000-0000-0000-0000-000000000001",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 1,
+    "total_expenses": 5,
+    "total_members": 1
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000002",
+    "user_uid": "00000000-0000-0000-0000-000000000002",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 2,
+    "total_expenses": 10,
+    "total_members": 2
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000003",
+    "user_uid": "00000000-0000-0000-0000-000000000003",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 3,
+    "total_expenses": 15,
+    "total_members": 3
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000004",
+    "user_uid": "00000000-0000-0000-0000-000000000004",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 4,
+    "total_expenses": 20,
+    "total_members": 4
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000005",
+    "user_uid": "00000000-0000-0000-0000-000000000005",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 5,
+    "total_expenses": 25,
+    "total_members": 5
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000006",
+    "user_uid": "00000000-0000-0000-0000-000000000006",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 6,
+    "total_expenses": 30,
+    "total_members": 6
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000007",
+    "user_uid": "00000000-0000-0000-0000-000000000007",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 7,
+    "total_expenses": 35,
+    "total_members": 7
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000008",
+    "user_uid": "00000000-0000-0000-0000-000000000008",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 8,
+    "total_expenses": 40,
+    "total_members": 8
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000009",
+    "user_uid": "00000000-0000-0000-0000-000000000009",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 9,
+    "total_expenses": 45,
+    "total_members": 9
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000010",
+    "user_uid": "00000000-0000-0000-0000-000000000010",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 0,
+    "total_expenses": 50,
+    "total_members": 10
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000011",
+    "user_uid": "00000000-0000-0000-0000-000000000011",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 1,
+    "total_expenses": 55,
+    "total_members": 11
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000012",
+    "user_uid": "00000000-0000-0000-0000-000000000012",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 2,
+    "total_expenses": 60,
+    "total_members": 12
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000013",
+    "user_uid": "00000000-0000-0000-0000-000000000013",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 3,
+    "total_expenses": 65,
+    "total_members": 13
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000014",
+    "user_uid": "00000000-0000-0000-0000-000000000014",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 4,
+    "total_expenses": 70,
+    "total_members": 14
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000015",
+    "user_uid": "00000000-0000-0000-0000-000000000015",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 5,
+    "total_expenses": 75,
+    "total_members": 15
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000016",
+    "user_uid": "00000000-0000-0000-0000-000000000016",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 6,
+    "total_expenses": 80,
+    "total_members": 16
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000017",
+    "user_uid": "00000000-0000-0000-0000-000000000017",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 7,
+    "total_expenses": 85,
+    "total_members": 17
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000018",
+    "user_uid": "00000000-0000-0000-0000-000000000018",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 8,
+    "total_expenses": 90,
+    "total_members": 18
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000019",
+    "user_uid": "00000000-0000-0000-0000-000000000019",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 9,
+    "total_expenses": 95,
+    "total_members": 19
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000020",
+    "user_uid": "00000000-0000-0000-0000-000000000020",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 0,
+    "total_expenses": 100,
+    "total_members": 0
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000021",
+    "user_uid": "00000000-0000-0000-0000-000000000021",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 1,
+    "total_expenses": 105,
+    "total_members": 1
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000022",
+    "user_uid": "00000000-0000-0000-0000-000000000022",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 2,
+    "total_expenses": 110,
+    "total_members": 2
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000023",
+    "user_uid": "00000000-0000-0000-0000-000000000023",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 3,
+    "total_expenses": 115,
+    "total_members": 3
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000024",
+    "user_uid": "00000000-0000-0000-0000-000000000024",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 4,
+    "total_expenses": 120,
+    "total_members": 4
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000025",
+    "user_uid": "00000000-0000-0000-0000-000000000025",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 5,
+    "total_expenses": 125,
+    "total_members": 5
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000026",
+    "user_uid": "00000000-0000-0000-0000-000000000026",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 6,
+    "total_expenses": 130,
+    "total_members": 6
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000027",
+    "user_uid": "00000000-0000-0000-0000-000000000027",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 7,
+    "total_expenses": 135,
+    "total_members": 7
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000028",
+    "user_uid": "00000000-0000-0000-0000-000000000028",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 8,
+    "total_expenses": 140,
+    "total_members": 8
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000029",
+    "user_uid": "00000000-0000-0000-0000-000000000029",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 9,
+    "total_expenses": 145,
+    "total_members": 9
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000030",
+    "user_uid": "00000000-0000-0000-0000-000000000030",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 0,
+    "total_expenses": 150,
+    "total_members": 10
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000031",
+    "user_uid": "00000000-0000-0000-0000-000000000031",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 1,
+    "total_expenses": 155,
+    "total_members": 11
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000032",
+    "user_uid": "00000000-0000-0000-0000-000000000032",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 2,
+    "total_expenses": 160,
+    "total_members": 12
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000033",
+    "user_uid": "00000000-0000-0000-0000-000000000033",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 3,
+    "total_expenses": 165,
+    "total_members": 13
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000034",
+    "user_uid": "00000000-0000-0000-0000-000000000034",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 4,
+    "total_expenses": 170,
+    "total_members": 14
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000035",
+    "user_uid": "00000000-0000-0000-0000-000000000035",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 5,
+    "total_expenses": 175,
+    "total_members": 15
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000036",
+    "user_uid": "00000000-0000-0000-0000-000000000036",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 6,
+    "total_expenses": 180,
+    "total_members": 16
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000037",
+    "user_uid": "00000000-0000-0000-0000-000000000037",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 7,
+    "total_expenses": 185,
+    "total_members": 17
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000038",
+    "user_uid": "00000000-0000-0000-0000-000000000038",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 8,
+    "total_expenses": 190,
+    "total_members": 18
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000039",
+    "user_uid": "00000000-0000-0000-0000-000000000039",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 9,
+    "total_expenses": 195,
+    "total_members": 19
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000040",
+    "user_uid": "00000000-0000-0000-0000-000000000040",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 0,
+    "total_expenses": 200,
+    "total_members": 0
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000041",
+    "user_uid": "00000000-0000-0000-0000-000000000041",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 1,
+    "total_expenses": 205,
+    "total_members": 1
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000042",
+    "user_uid": "00000000-0000-0000-0000-000000000042",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 2,
+    "total_expenses": 210,
+    "total_members": 2
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000043",
+    "user_uid": "00000000-0000-0000-0000-000000000043",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 3,
+    "total_expenses": 215,
+    "total_members": 3
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000044",
+    "user_uid": "00000000-0000-0000-0000-000000000044",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 4,
+    "total_expenses": 220,
+    "total_members": 4
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000045",
+    "user_uid": "00000000-0000-0000-0000-000000000045",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 5,
+    "total_expenses": 225,
+    "total_members": 5
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000046",
+    "user_uid": "00000000-0000-0000-0000-000000000046",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 6,
+    "total_expenses": 230,
+    "total_members": 6
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000047",
+    "user_uid": "00000000-0000-0000-0000-000000000047",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 7,
+    "total_expenses": 235,
+    "total_members": 7
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000048",
+    "user_uid": "00000000-0000-0000-0000-000000000048",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 8,
+    "total_expenses": 240,
+    "total_members": 8
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000049",
+    "user_uid": "00000000-0000-0000-0000-000000000049",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 9,
+    "total_expenses": 245,
+    "total_members": 9
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000050",
+    "user_uid": "00000000-0000-0000-0000-000000000050",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 0,
+    "total_expenses": 250,
+    "total_members": 10
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000051",
+    "user_uid": "00000000-0000-0000-0000-000000000051",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 1,
+    "total_expenses": 255,
+    "total_members": 11
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000052",
+    "user_uid": "00000000-0000-0000-0000-000000000052",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 2,
+    "total_expenses": 260,
+    "total_members": 12
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000053",
+    "user_uid": "00000000-0000-0000-0000-000000000053",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 3,
+    "total_expenses": 265,
+    "total_members": 13
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000054",
+    "user_uid": "00000000-0000-0000-0000-000000000054",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 4,
+    "total_expenses": 270,
+    "total_members": 14
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000055",
+    "user_uid": "00000000-0000-0000-0000-000000000055",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 5,
+    "total_expenses": 275,
+    "total_members": 15
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000056",
+    "user_uid": "00000000-0000-0000-0000-000000000056",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 6,
+    "total_expenses": 280,
+    "total_members": 16
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000057",
+    "user_uid": "00000000-0000-0000-0000-000000000057",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 7,
+    "total_expenses": 285,
+    "total_members": 17
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000058",
+    "user_uid": "00000000-0000-0000-0000-000000000058",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 8,
+    "total_expenses": 290,
+    "total_members": 18
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000059",
+    "user_uid": "00000000-0000-0000-0000-000000000059",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 9,
+    "total_expenses": 295,
+    "total_members": 19
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000060",
+    "user_uid": "00000000-0000-0000-0000-000000000060",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 0,
+    "total_expenses": 300,
+    "total_members": 0
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000061",
+    "user_uid": "00000000-0000-0000-0000-000000000061",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 1,
+    "total_expenses": 305,
+    "total_members": 1
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000062",
+    "user_uid": "00000000-0000-0000-0000-000000000062",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 2,
+    "total_expenses": 310,
+    "total_members": 2
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000063",
+    "user_uid": "00000000-0000-0000-0000-000000000063",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 3,
+    "total_expenses": 315,
+    "total_members": 3
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000064",
+    "user_uid": "00000000-0000-0000-0000-000000000064",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 4,
+    "total_expenses": 320,
+    "total_members": 4
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000065",
+    "user_uid": "00000000-0000-0000-0000-000000000065",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 5,
+    "total_expenses": 325,
+    "total_members": 5
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000066",
+    "user_uid": "00000000-0000-0000-0000-000000000066",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 6,
+    "total_expenses": 330,
+    "total_members": 6
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000067",
+    "user_uid": "00000000-0000-0000-0000-000000000067",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 7,
+    "total_expenses": 335,
+    "total_members": 7
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000068",
+    "user_uid": "00000000-0000-0000-0000-000000000068",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 8,
+    "total_expenses": 340,
+    "total_members": 8
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000069",
+    "user_uid": "00000000-0000-0000-0000-000000000069",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 9,
+    "total_expenses": 345,
+    "total_members": 9
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000070",
+    "user_uid": "00000000-0000-0000-0000-000000000070",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 0,
+    "total_expenses": 350,
+    "total_members": 10
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000071",
+    "user_uid": "00000000-0000-0000-0000-000000000071",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 1,
+    "total_expenses": 355,
+    "total_members": 11
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000072",
+    "user_uid": "00000000-0000-0000-0000-000000000072",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 2,
+    "total_expenses": 360,
+    "total_members": 12
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000073",
+    "user_uid": "00000000-0000-0000-0000-000000000073",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 3,
+    "total_expenses": 365,
+    "total_members": 13
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000074",
+    "user_uid": "00000000-0000-0000-0000-000000000074",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 4,
+    "total_expenses": 370,
+    "total_members": 14
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000075",
+    "user_uid": "00000000-0000-0000-0000-000000000075",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 5,
+    "total_expenses": 375,
+    "total_members": 15
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000076",
+    "user_uid": "00000000-0000-0000-0000-000000000076",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 6,
+    "total_expenses": 380,
+    "total_members": 16
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000077",
+    "user_uid": "00000000-0000-0000-0000-000000000077",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 7,
+    "total_expenses": 385,
+    "total_members": 17
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000078",
+    "user_uid": "00000000-0000-0000-0000-000000000078",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 8,
+    "total_expenses": 390,
+    "total_members": 18
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000079",
+    "user_uid": "00000000-0000-0000-0000-000000000079",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 9,
+    "total_expenses": 395,
+    "total_members": 19
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000080",
+    "user_uid": "00000000-0000-0000-0000-000000000080",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 0,
+    "total_expenses": 400,
+    "total_members": 0
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000081",
+    "user_uid": "00000000-0000-0000-0000-000000000081",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 1,
+    "total_expenses": 405,
+    "total_members": 1
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000082",
+    "user_uid": "00000000-0000-0000-0000-000000000082",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 2,
+    "total_expenses": 410,
+    "total_members": 2
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000083",
+    "user_uid": "00000000-0000-0000-0000-000000000083",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 3,
+    "total_expenses": 415,
+    "total_members": 3
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000084",
+    "user_uid": "00000000-0000-0000-0000-000000000084",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 4,
+    "total_expenses": 420,
+    "total_members": 4
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000085",
+    "user_uid": "00000000-0000-0000-0000-000000000085",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 5,
+    "total_expenses": 425,
+    "total_members": 5
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000086",
+    "user_uid": "00000000-0000-0000-0000-000000000086",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 6,
+    "total_expenses": 430,
+    "total_members": 6
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000087",
+    "user_uid": "00000000-0000-0000-0000-000000000087",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 7,
+    "total_expenses": 435,
+    "total_members": 7
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000088",
+    "user_uid": "00000000-0000-0000-0000-000000000088",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 8,
+    "total_expenses": 440,
+    "total_members": 8
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000089",
+    "user_uid": "00000000-0000-0000-0000-000000000089",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 9,
+    "total_expenses": 445,
+    "total_members": 9
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000090",
+    "user_uid": "00000000-0000-0000-0000-000000000090",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 0,
+    "total_expenses": 450,
+    "total_members": 10
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000091",
+    "user_uid": "00000000-0000-0000-0000-000000000091",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 1,
+    "total_expenses": 455,
+    "total_members": 11
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000092",
+    "user_uid": "00000000-0000-0000-0000-000000000092",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 2,
+    "total_expenses": 460,
+    "total_members": 12
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000093",
+    "user_uid": "00000000-0000-0000-0000-000000000093",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 3,
+    "total_expenses": 465,
+    "total_members": 13
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000094",
+    "user_uid": "00000000-0000-0000-0000-000000000094",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 4,
+    "total_expenses": 470,
+    "total_members": 14
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000095",
+    "user_uid": "00000000-0000-0000-0000-000000000095",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 5,
+    "total_expenses": 475,
+    "total_members": 15
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000096",
+    "user_uid": "00000000-0000-0000-0000-000000000096",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 6,
+    "total_expenses": 480,
+    "total_members": 16
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000097",
+    "user_uid": "00000000-0000-0000-0000-000000000097",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 7,
+    "total_expenses": 485,
+    "total_members": 17
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000098",
+    "user_uid": "00000000-0000-0000-0000-000000000098",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 8,
+    "total_expenses": 490,
+    "total_members": 18
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000099",
+    "user_uid": "00000000-0000-0000-0000-000000000099",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 9,
+    "total_expenses": 495,
+    "total_members": 19
+  },
+  {
+    "id": "aaaaaaaa-aaaa-aaaa-aaaa-000000000100",
+    "user_uid": "00000000-0000-0000-0000-000000000100",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "groups_count": 0,
+    "total_expenses": 500,
+    "total_members": 0
+  }
+]

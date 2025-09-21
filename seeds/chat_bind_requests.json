@@ -1,1 +1,802 @@
-[]
+[
+  {
+    "id": "77777777-7777-7777-7777-000000000001",
+    "platform": "whatsapp",
+    "p_uid": "puid1",
+    "nonce": "nonce1",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000002",
+    "platform": "telegram",
+    "p_uid": "puid2",
+    "nonce": "nonce2",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000003",
+    "platform": "whatsapp",
+    "p_uid": "puid3",
+    "nonce": "nonce3",
+    "user_uid": "00000000-0000-0000-0000-000000000004",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000004",
+    "platform": "telegram",
+    "p_uid": "puid4",
+    "nonce": "nonce4",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000005",
+    "platform": "whatsapp",
+    "p_uid": "puid5",
+    "nonce": "nonce5",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000006",
+    "platform": "telegram",
+    "p_uid": "puid6",
+    "nonce": "nonce6",
+    "user_uid": "00000000-0000-0000-0000-000000000007",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000007",
+    "platform": "whatsapp",
+    "p_uid": "puid7",
+    "nonce": "nonce7",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000008",
+    "platform": "telegram",
+    "p_uid": "puid8",
+    "nonce": "nonce8",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000009",
+    "platform": "whatsapp",
+    "p_uid": "puid9",
+    "nonce": "nonce9",
+    "user_uid": "00000000-0000-0000-0000-000000000010",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000010",
+    "platform": "telegram",
+    "p_uid": "puid10",
+    "nonce": "nonce10",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000011",
+    "platform": "whatsapp",
+    "p_uid": "puid11",
+    "nonce": "nonce11",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000012",
+    "platform": "telegram",
+    "p_uid": "puid12",
+    "nonce": "nonce12",
+    "user_uid": "00000000-0000-0000-0000-000000000013",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000013",
+    "platform": "whatsapp",
+    "p_uid": "puid13",
+    "nonce": "nonce13",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000014",
+    "platform": "telegram",
+    "p_uid": "puid14",
+    "nonce": "nonce14",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000015",
+    "platform": "whatsapp",
+    "p_uid": "puid15",
+    "nonce": "nonce15",
+    "user_uid": "00000000-0000-0000-0000-000000000016",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000016",
+    "platform": "telegram",
+    "p_uid": "puid16",
+    "nonce": "nonce16",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000017",
+    "platform": "whatsapp",
+    "p_uid": "puid17",
+    "nonce": "nonce17",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000018",
+    "platform": "telegram",
+    "p_uid": "puid18",
+    "nonce": "nonce18",
+    "user_uid": "00000000-0000-0000-0000-000000000019",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000019",
+    "platform": "whatsapp",
+    "p_uid": "puid19",
+    "nonce": "nonce19",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000020",
+    "platform": "telegram",
+    "p_uid": "puid20",
+    "nonce": "nonce20",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000021",
+    "platform": "whatsapp",
+    "p_uid": "puid21",
+    "nonce": "nonce21",
+    "user_uid": "00000000-0000-0000-0000-000000000022",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000022",
+    "platform": "telegram",
+    "p_uid": "puid22",
+    "nonce": "nonce22",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000023",
+    "platform": "whatsapp",
+    "p_uid": "puid23",
+    "nonce": "nonce23",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000024",
+    "platform": "telegram",
+    "p_uid": "puid24",
+    "nonce": "nonce24",
+    "user_uid": "00000000-0000-0000-0000-000000000025",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000025",
+    "platform": "whatsapp",
+    "p_uid": "puid25",
+    "nonce": "nonce25",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000026",
+    "platform": "telegram",
+    "p_uid": "puid26",
+    "nonce": "nonce26",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000027",
+    "platform": "whatsapp",
+    "p_uid": "puid27",
+    "nonce": "nonce27",
+    "user_uid": "00000000-0000-0000-0000-000000000028",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000028",
+    "platform": "telegram",
+    "p_uid": "puid28",
+    "nonce": "nonce28",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000029",
+    "platform": "whatsapp",
+    "p_uid": "puid29",
+    "nonce": "nonce29",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000030",
+    "platform": "telegram",
+    "p_uid": "puid30",
+    "nonce": "nonce30",
+    "user_uid": "00000000-0000-0000-0000-000000000031",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000031",
+    "platform": "whatsapp",
+    "p_uid": "puid31",
+    "nonce": "nonce31",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000032",
+    "platform": "telegram",
+    "p_uid": "puid32",
+    "nonce": "nonce32",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000033",
+    "platform": "whatsapp",
+    "p_uid": "puid33",
+    "nonce": "nonce33",
+    "user_uid": "00000000-0000-0000-0000-000000000034",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000034",
+    "platform": "telegram",
+    "p_uid": "puid34",
+    "nonce": "nonce34",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000035",
+    "platform": "whatsapp",
+    "p_uid": "puid35",
+    "nonce": "nonce35",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000036",
+    "platform": "telegram",
+    "p_uid": "puid36",
+    "nonce": "nonce36",
+    "user_uid": "00000000-0000-0000-0000-000000000037",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000037",
+    "platform": "whatsapp",
+    "p_uid": "puid37",
+    "nonce": "nonce37",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000038",
+    "platform": "telegram",
+    "p_uid": "puid38",
+    "nonce": "nonce38",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000039",
+    "platform": "whatsapp",
+    "p_uid": "puid39",
+    "nonce": "nonce39",
+    "user_uid": "00000000-0000-0000-0000-000000000040",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000040",
+    "platform": "telegram",
+    "p_uid": "puid40",
+    "nonce": "nonce40",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000041",
+    "platform": "whatsapp",
+    "p_uid": "puid41",
+    "nonce": "nonce41",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000042",
+    "platform": "telegram",
+    "p_uid": "puid42",
+    "nonce": "nonce42",
+    "user_uid": "00000000-0000-0000-0000-000000000043",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000043",
+    "platform": "whatsapp",
+    "p_uid": "puid43",
+    "nonce": "nonce43",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000044",
+    "platform": "telegram",
+    "p_uid": "puid44",
+    "nonce": "nonce44",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000045",
+    "platform": "whatsapp",
+    "p_uid": "puid45",
+    "nonce": "nonce45",
+    "user_uid": "00000000-0000-0000-0000-000000000046",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000046",
+    "platform": "telegram",
+    "p_uid": "puid46",
+    "nonce": "nonce46",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000047",
+    "platform": "whatsapp",
+    "p_uid": "puid47",
+    "nonce": "nonce47",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000048",
+    "platform": "telegram",
+    "p_uid": "puid48",
+    "nonce": "nonce48",
+    "user_uid": "00000000-0000-0000-0000-000000000049",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000049",
+    "platform": "whatsapp",
+    "p_uid": "puid49",
+    "nonce": "nonce49",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000050",
+    "platform": "telegram",
+    "p_uid": "puid50",
+    "nonce": "nonce50",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000051",
+    "platform": "whatsapp",
+    "p_uid": "puid51",
+    "nonce": "nonce51",
+    "user_uid": "00000000-0000-0000-0000-000000000052",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000052",
+    "platform": "telegram",
+    "p_uid": "puid52",
+    "nonce": "nonce52",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000053",
+    "platform": "whatsapp",
+    "p_uid": "puid53",
+    "nonce": "nonce53",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000054",
+    "platform": "telegram",
+    "p_uid": "puid54",
+    "nonce": "nonce54",
+    "user_uid": "00000000-0000-0000-0000-000000000055",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000055",
+    "platform": "whatsapp",
+    "p_uid": "puid55",
+    "nonce": "nonce55",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000056",
+    "platform": "telegram",
+    "p_uid": "puid56",
+    "nonce": "nonce56",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000057",
+    "platform": "whatsapp",
+    "p_uid": "puid57",
+    "nonce": "nonce57",
+    "user_uid": "00000000-0000-0000-0000-000000000058",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000058",
+    "platform": "telegram",
+    "p_uid": "puid58",
+    "nonce": "nonce58",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000059",
+    "platform": "whatsapp",
+    "p_uid": "puid59",
+    "nonce": "nonce59",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000060",
+    "platform": "telegram",
+    "p_uid": "puid60",
+    "nonce": "nonce60",
+    "user_uid": "00000000-0000-0000-0000-000000000061",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000061",
+    "platform": "whatsapp",
+    "p_uid": "puid61",
+    "nonce": "nonce61",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000062",
+    "platform": "telegram",
+    "p_uid": "puid62",
+    "nonce": "nonce62",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000063",
+    "platform": "whatsapp",
+    "p_uid": "puid63",
+    "nonce": "nonce63",
+    "user_uid": "00000000-0000-0000-0000-000000000064",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000064",
+    "platform": "telegram",
+    "p_uid": "puid64",
+    "nonce": "nonce64",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000065",
+    "platform": "whatsapp",
+    "p_uid": "puid65",
+    "nonce": "nonce65",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000066",
+    "platform": "telegram",
+    "p_uid": "puid66",
+    "nonce": "nonce66",
+    "user_uid": "00000000-0000-0000-0000-000000000067",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000067",
+    "platform": "whatsapp",
+    "p_uid": "puid67",
+    "nonce": "nonce67",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000068",
+    "platform": "telegram",
+    "p_uid": "puid68",
+    "nonce": "nonce68",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000069",
+    "platform": "whatsapp",
+    "p_uid": "puid69",
+    "nonce": "nonce69",
+    "user_uid": "00000000-0000-0000-0000-000000000070",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000070",
+    "platform": "telegram",
+    "p_uid": "puid70",
+    "nonce": "nonce70",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000071",
+    "platform": "whatsapp",
+    "p_uid": "puid71",
+    "nonce": "nonce71",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000072",
+    "platform": "telegram",
+    "p_uid": "puid72",
+    "nonce": "nonce72",
+    "user_uid": "00000000-0000-0000-0000-000000000073",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000073",
+    "platform": "whatsapp",
+    "p_uid": "puid73",
+    "nonce": "nonce73",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000074",
+    "platform": "telegram",
+    "p_uid": "puid74",
+    "nonce": "nonce74",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000075",
+    "platform": "whatsapp",
+    "p_uid": "puid75",
+    "nonce": "nonce75",
+    "user_uid": "00000000-0000-0000-0000-000000000076",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000076",
+    "platform": "telegram",
+    "p_uid": "puid76",
+    "nonce": "nonce76",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000077",
+    "platform": "whatsapp",
+    "p_uid": "puid77",
+    "nonce": "nonce77",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000078",
+    "platform": "telegram",
+    "p_uid": "puid78",
+    "nonce": "nonce78",
+    "user_uid": "00000000-0000-0000-0000-000000000079",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000079",
+    "platform": "whatsapp",
+    "p_uid": "puid79",
+    "nonce": "nonce79",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000080",
+    "platform": "telegram",
+    "p_uid": "puid80",
+    "nonce": "nonce80",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000081",
+    "platform": "whatsapp",
+    "p_uid": "puid81",
+    "nonce": "nonce81",
+    "user_uid": "00000000-0000-0000-0000-000000000082",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000082",
+    "platform": "telegram",
+    "p_uid": "puid82",
+    "nonce": "nonce82",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000083",
+    "platform": "whatsapp",
+    "p_uid": "puid83",
+    "nonce": "nonce83",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000084",
+    "platform": "telegram",
+    "p_uid": "puid84",
+    "nonce": "nonce84",
+    "user_uid": "00000000-0000-0000-0000-000000000085",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000085",
+    "platform": "whatsapp",
+    "p_uid": "puid85",
+    "nonce": "nonce85",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000086",
+    "platform": "telegram",
+    "p_uid": "puid86",
+    "nonce": "nonce86",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000087",
+    "platform": "whatsapp",
+    "p_uid": "puid87",
+    "nonce": "nonce87",
+    "user_uid": "00000000-0000-0000-0000-000000000088",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000088",
+    "platform": "telegram",
+    "p_uid": "puid88",
+    "nonce": "nonce88",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000089",
+    "platform": "whatsapp",
+    "p_uid": "puid89",
+    "nonce": "nonce89",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000090",
+    "platform": "telegram",
+    "p_uid": "puid90",
+    "nonce": "nonce90",
+    "user_uid": "00000000-0000-0000-0000-000000000091",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000091",
+    "platform": "whatsapp",
+    "p_uid": "puid91",
+    "nonce": "nonce91",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000092",
+    "platform": "telegram",
+    "p_uid": "puid92",
+    "nonce": "nonce92",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000093",
+    "platform": "whatsapp",
+    "p_uid": "puid93",
+    "nonce": "nonce93",
+    "user_uid": "00000000-0000-0000-0000-000000000094",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000094",
+    "platform": "telegram",
+    "p_uid": "puid94",
+    "nonce": "nonce94",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000095",
+    "platform": "whatsapp",
+    "p_uid": "puid95",
+    "nonce": "nonce95",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000096",
+    "platform": "telegram",
+    "p_uid": "puid96",
+    "nonce": "nonce96",
+    "user_uid": "00000000-0000-0000-0000-000000000097",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000097",
+    "platform": "whatsapp",
+    "p_uid": "puid97",
+    "nonce": "nonce97",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000098",
+    "platform": "telegram",
+    "p_uid": "puid98",
+    "nonce": "nonce98",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000099",
+    "platform": "whatsapp",
+    "p_uid": "puid99",
+    "nonce": "nonce99",
+    "user_uid": "00000000-0000-0000-0000-000000000100",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  {
+    "id": "77777777-7777-7777-7777-000000000100",
+    "platform": "telegram",
+    "p_uid": "puid100",
+    "nonce": "nonce100",
+    
+    "expires_at": "2025-12-31T23:59:59Z"
+  }
+]
