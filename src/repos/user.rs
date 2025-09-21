@@ -99,6 +99,11 @@ impl UserRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         payload: CreateUserDbPayload,
     ) -> Result<User, DatabaseError> {
+        if payload.start_over_date < 1 || payload.start_over_date > 28 {
+            return Err(DatabaseError::ConstraintViolation(
+                "start_over_date must be between 1 and 28".into(),
+            ));
+        }
         let uid = Uuid::new_v4();
         let row = sqlx::query_as::<_, User>(
             r#"INSERT INTO users (uid, email, phash, start_over_date)
@@ -123,6 +128,11 @@ impl UserRepo {
         let email = payload.email.unwrap_or(current.email);
         let phash = payload.phash.unwrap_or(current.phash);
         let start_over_date = payload.start_over_date.unwrap_or(current.start_over_date);
+        if start_over_date < 1 || start_over_date > 28 {
+            return Err(DatabaseError::ConstraintViolation(
+                "start_over_date must be between 1 and 28".into(),
+            ));
+        }
         let row = sqlx::query_as::<_, UserRead>(
             r#"UPDATE users SET email = $1, phash = $2, start_over_date = $3 WHERE uid = $4
                RETURNING uid, email, start_over_date"#,

@@ -11,14 +11,13 @@ use uuid::Uuid;
 
 use crate::{
     auth::AuthContext, error::AppError, repos::{
-        expense_group::{CreateExpenseGroupPayload, ExpenseGroupRepo},
-        user::{CreateUserDbPayload, UserRead, UserRepo},
-    }, types::AppState
+        expense_group::{CreateExpenseGroupPayload, ExpenseGroupRepo}, subscription::{CreateSubscriptionDbPayload, SubscriptionRepo}, user::{CreateUserDbPayload, UserRead, UserRepo}
+    }, types::{AppState, SubscriptionTier}
 };
 
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
-        .route("/users", axum::routing::get(list_users))
+        // .route("/users", axum::routing::get(list_users))
         .route(
             "/users/{uid}",
             axum::routing::put(update_user),
@@ -82,6 +81,18 @@ pub async fn create_user(
         },
     )
     .await?;
+
+    let _ = SubscriptionRepo::create(
+        &mut tx,
+        CreateSubscriptionDbPayload {
+            user_uid: user.uid,
+            tier: SubscriptionTier::Free,
+            status: Some("active".to_string()),
+            current_period_start: None,
+            current_period_end: None,
+        },
+    ).await?;
+
 
     tx.commit().await.map_err(|e| AppError::from(e))?;
 
