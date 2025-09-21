@@ -1,0 +1,51 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Rust Backend",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/target/debug/expense-tracker",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "cargo build",
+      "env": {
+        "DATABASE_URL": "postgres://postgres:postgres@localhost:5432/postgres",
+        "JWT_SECRET": "development-jwt-secret-key-for-debugging",
+        "CHAT_RELAY_SECRET": "development-chat-relay-secret"
+      }
+    },
+    {
+      "name": "Debug Rust Tests",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/target/debug/deps/expense_tracker-13069e000addabfd",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "cargo test --no-run",
+      "env": {
+        "DATABASE_URL": "postgres://postgres:postgres@localhost:5432/postgres"
+      }
+    },
+    {
+      "name": "Debug Web App",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/apps/web/node_modules/.bin/vite",
+      "args": ["--host", "0.0.0.0"],
+      "cwd": "${workspaceFolder}/apps/web",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Debug Web App (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/apps/web",
+      "sourceMapPathOverrides": {
+        "webpack:///src/*": "${webRoot}/src/*"
+      }
+    }
+  ]
+}

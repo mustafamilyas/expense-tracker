@@ -9,7 +9,11 @@ use uuid::Uuid;
 use crate::{
     auth::{group_guard::group_guard, AuthContext},
     error::AppError,
-    repos::{category::{Category, CategoryRepo, CreateCategoryDbPayload, UpdateCategoryDbPayload}},
+    middleware::tier::check_tier_limit,
+    repos::{
+        category::{Category, CategoryRepo, CreateCategoryDbPayload, UpdateCategoryDbPayload},
+        subscription::SubscriptionRepo,
+    },
     types::AppState,
 };
 
@@ -38,9 +42,9 @@ pub async fn list(
     Path(group_uid): Path<Uuid>,
 ) -> Result<Json<Vec<Category>>, AppError> {
     group_guard(&auth, group_uid, &state.db_pool).await?;
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for listing categories"))?;
     let res = CategoryRepo::list_by_group(&mut tx, group_uid).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for listing categories"))?;
     Ok(Json(res))
 }
 
@@ -50,11 +54,11 @@ pub async fn get(
     Extension(auth): Extension<AuthContext>,
     Path(uid): Path<Uuid>,
 ) -> Result<Json<Category>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for getting category"))?;
     let prev_category = CategoryRepo::get(&mut tx, uid).await?;
     group_guard(&auth, prev_category.group_uid, &state.db_pool).await?;
     let res = CategoryRepo::get(&mut tx, uid).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for getting category"))?;
     Ok(Json(res))
 }
 
@@ -81,7 +85,15 @@ pub async fn create(
 ) -> Result<Json<Category>, AppError> {
     group_guard(&auth, payload.group_uid, &state.db_pool).await?;
 
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for creating category"))?;
+
+    // Get user's subscription
+    let subscription = SubscriptionRepo::get_by_user(&mut tx, auth.user_uid).await?;
+
+    // Check category limit per group
+    let current_categories = CategoryRepo::count_by_group(&mut tx, payload.group_uid).await?;
+    check_tier_limit(&subscription, "categories_per_group", current_categories as i32)?;
+
     let created = CategoryRepo::create(
         &mut tx,
         CreateCategoryDbPayload {
@@ -91,7 +103,7 @@ pub async fn create(
         },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for creating category"))?;
     Ok(Json(created))
 }
 
@@ -108,9 +120,9 @@ pub async fn update(
     Path(uid): Path<Uuid>,
     Json(payload): Json<UpdateCategoryPayload>,
 ) -> Result<Json<Category>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for updating category"))?;
     let prev_category = CategoryRepo::get(&mut tx, uid).await?;
-    
+
     group_guard(&auth, prev_category.group_uid, &state.db_pool).await?;
 
     let updated = CategoryRepo::update(
@@ -122,7 +134,7 @@ pub async fn update(
         },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for updating category"))?;
     Ok(Json(updated))
 }
 
@@ -132,10 +144,10 @@ pub async fn delete_(
     Extension(auth): Extension<AuthContext>, 
     Path(uid): Path<Uuid>
 ) -> Result<(), AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for deleting category"))?;
     let prev_category = CategoryRepo::get(&mut tx, uid).await?;
     group_guard(&auth, prev_category.group_uid, &state.db_pool).await?;
     CategoryRepo::delete(&mut tx, uid).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for deleting category"))?;
     Ok(())
 }

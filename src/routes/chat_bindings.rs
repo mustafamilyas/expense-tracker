@@ -45,7 +45,7 @@ pub async fn accept(
 ) -> Result<Json<ChatBinding>, AppError> {
     group_guard(&auth, payload.group_uid, &state.db_pool).await?;
 
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for accepting chat binding"))?;
     let chat_bind_request = ChatBindRequestRepo::get(&mut tx, payload.request_id).await?;
     // TODO: proper nonce handling (e.g. one-time use)
     if chat_bind_request.nonce != payload.nonce {
@@ -53,7 +53,7 @@ pub async fn accept(
     }
     if chat_bind_request.expires_at < chrono::Utc::now() {
         ChatBindRequestRepo::delete(&mut tx, payload.request_id).await?;
-        tx.commit().await.map_err(|e| AppError::from(e))?;
+        tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for expired chat bind request"))?;
         return Err(AppError::BadRequest("Chat bind request expired".into()));
     }
     let created = ChatBindingRepo::create(
@@ -67,15 +67,34 @@ pub async fn accept(
         },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for creating chat binding"))?;
+
+    // Send welcome message to the chat
+    if let Some(messenger_manager) = &state.messenger_manager {
+        let welcome_message = "🎉 Welcome! Your expense tracker is now ready to use!\n\n\
+            📝 Available commands:\n\
+            • /expense - Add new expenses\n\
+            • /expense-edit - Edit existing expenses\n\
+            • /report - View monthly summary\n\
+            • /history - View expense history\n\
+            • /budget - View budget overview\n\
+            • /category - Manage categories\n\
+            • /command - Show all commands\n\n\
+            💡 Start by adding your first expense with /expense!";
+
+        if let Err(e) = messenger_manager.send_message(&created.platform, &created.p_uid, welcome_message).await {
+            tracing::error!("Failed to send welcome message: {:?}", e);
+        }
+    }
+
     Ok(Json(created))
 }
 
 // #[utoipa::path(get, path = "/chat-bindings", responses((status = 200, body = [ChatBinding])), tag = "Chat Bindings", operation_id = "listChatBindings", security(("bearerAuth" = [])))]
 // pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<ChatBinding>>, AppError> {
-//     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+//     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e))?;
 //     let res = ChatBindingRepo::list(&mut tx).await?;
-//     tx.commit().await.map_err(|e| AppError::from(e))?;
+//     tx.commit().await.map_err(|e| AppError::from_sqlx_error(e))?;
 //     Ok(Json(res))
 // }
 
@@ -84,9 +103,9 @@ pub async fn accept(
 //     State(state): State<AppState>,
 //     Path(id): Path<Uuid>,
 // ) -> Result<Json<ChatBinding>, AppError> {
-//     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+//     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e))?;
 //     let res = ChatBindingRepo::get(&mut tx, id).await?;
-//     tx.commit().await.map_err(|e| AppError::from(e))?;
+//     tx.commit().await.map_err(|e| AppError::from_sqlx_error(e))?;
 //     Ok(Json(res))
 // }
 
@@ -108,7 +127,7 @@ pub async fn accept(
 //     if matches!(auth.source, AuthSource::Chat) && auth.group_uid != Some(payload.group_uid) {
 //         return Err(AppError::Unauthorized("Group scope mismatch".into()));
 //     }
-//     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+//     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e))?;
 //     let created = ChatBindingRepo::create(
 //         &mut tx,
 //         CreateChatBindingDbPayload {
@@ -120,7 +139,7 @@ pub async fn accept(
 //         },
 //     )
 //     .await?;
-//     tx.commit().await.map_err(|e| AppError::from(e))?;
+//     tx.commit().await.map_err(|e| AppError::from_sqlx_error(e))?;
 //     Ok(Json(created))
 // }
 
@@ -136,7 +155,7 @@ pub async fn accept(
 //     Path(id): Path<Uuid>,
 //     Json(payload): Json<UpdateChatBindingPayload>,
 // ) -> Result<Json<ChatBinding>, AppError> {
-//     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+//     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e))?;
 //     let updated = ChatBindingRepo::update(
 //         &mut tx,
 //         id,
@@ -146,14 +165,14 @@ pub async fn accept(
 //         },
 //     )
 //     .await?;
-//     tx.commit().await.map_err(|e| AppError::from(e))?;
+//     tx.commit().await.map_err(|e| AppError::from_sqlx_error(e))?;
 //     Ok(Json(updated))
 // }
 
 // #[utoipa::path(delete, path = "/chat-bindings/{id}", params(("id" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Chat Bindings", operation_id = "deleteChatBinding", security(("bearerAuth" = [])))]
 // pub async fn delete_(State(state): State<AppState>, Path(id): Path<Uuid>) -> Result<(), AppError> {
-//     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+//     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e))?;
 //     ChatBindingRepo::delete(&mut tx, id).await?;
-//     tx.commit().await.map_err(|e| AppError::from(e))?;
+//     tx.commit().await.map_err(|e| AppError::from_sqlx_error(e))?;
 //     Ok(())
 // }

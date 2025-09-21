@@ -3,14 +3,19 @@ use axum::{
     extract::{Extension, Path, State},
 };
 use serde::Deserialize;
+use serde_json;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
     auth::{AuthContext, group_guard::group_guard},
     error::AppError,
-    repos::expense_entry::{
-        CreateExpenseEntryDbPayload, ExpenseEntry, ExpenseEntryRepo, UpdateExpenseEntryDbPayload,
+    middleware::tier::check_tier_limit,
+    repos::{
+        expense_entry::{
+            CreateExpenseEntryDbPayload, ExpenseEntry, ExpenseEntryRepo, UpdateExpenseEntryDbPayload,
+        },
+        subscription::SubscriptionRepo,
     },
     types::AppState,
 };
@@ -40,9 +45,9 @@ pub async fn list_expense_entries(
     Path(group_uid): Path<Uuid>,
 ) -> Result<Json<Vec<ExpenseEntry>>, AppError> {
     group_guard(&auth, group_uid, &state.db_pool).await?;
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for listing expense entries"))?;
     let res = ExpenseEntryRepo::list_by_group(&mut tx, group_uid).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for listing expense entries"))?;
     Ok(Json(res))
 }
 
@@ -54,14 +59,22 @@ pub struct CreateExpenseEntryPayload {
     pub category_uid: Uuid,
 }
 
-#[utoipa::path(post, path = "/expense-entries", request_body = CreateExpenseEntryPayload, responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "createExpenseEntry", security(("bearerAuth" = [])))]
+#[utoipa::path(post, path = "/expense-entries", request_body = CreateExpenseEntryPayload, responses((status = 200, body = serde_json::Value)), tag = "Expense Entries", operation_id = "createExpenseEntry", security(("bearerAuth" = [])))]
 pub async fn create_expense_entry(
     State(state): State<AppState>,
     Extension(auth): Extension<AuthContext>,
     Json(payload): Json<CreateExpenseEntryPayload>,
-) -> Result<Json<ExpenseEntry>, AppError> {
+) -> Result<Json<serde_json::Value>, AppError> {
     group_guard(&auth, payload.group_uid, &state.db_pool).await?;
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for creating expense entry"))?;
+
+    // Get user's subscription
+    let subscription = SubscriptionRepo::get_by_user(&mut tx, auth.user_uid).await?;
+
+    // Check expense limit for current month
+    let usage_payload = crate::repos::subscription::UserUsageRepo::calculate_current_usage(&mut tx, auth.user_uid).await?;
+    check_tier_limit(&subscription, "expenses_per_month", usage_payload.total_expenses)?;
+
     let created = ExpenseEntryRepo::create_expense_entry(
         &mut tx,
         CreateExpenseEntryDbPayload {
@@ -72,8 +85,29 @@ pub async fn create_expense_entry(
         },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
-    Ok(Json(created))
+
+    // Check if near limit and include upgrade warning in response
+    let limits = subscription.get_tier().limits();
+    let mut response_data = serde_json::to_value(&created).unwrap();
+
+    if limits.is_near_limit(usage_payload.total_expenses, limits.max_expenses_per_month) {
+        let upgrade_message = crate::middleware::tier::get_upgrade_message(
+            &subscription,
+            "expenses_per_month",
+            usage_payload.total_expenses as i32,
+            limits.max_expenses_per_month,
+        );
+
+        if let serde_json::Value::Object(ref mut map) = response_data {
+            map.insert("upgrade_warning".to_string(), upgrade_message);
+        }
+
+        tracing::warn!("User {} is near expense limit: {}/{}",
+            auth.user_uid, usage_payload.total_expenses, limits.max_expenses_per_month);
+    }
+
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for creating expense entry"))?;
+    Ok(Json(response_data))
 }
 
 #[utoipa::path(get, path = "/expense-entries/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, body = ExpenseEntry)), tag = "Expense Entries", operation_id = "getExpenseEntry", security(("bearerAuth" = [])))]
@@ -82,10 +116,10 @@ pub async fn get_expense_entry(
     Extension(auth): Extension<AuthContext>,
     Path(uid): Path<Uuid>,
 ) -> Result<Json<ExpenseEntry>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for getting expense entry"))?;
     let rec = ExpenseEntryRepo::get(&mut tx, uid).await?;
     group_guard(&auth, rec.group_uid, &state.db_pool).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for getting expense entry"))?;
     Ok(Json(rec))
 }
 
@@ -103,7 +137,7 @@ pub async fn update_expense_entry(
     Path(uid): Path<Uuid>,
     Json(payload): Json<UpdateExpenseEntryPayload>,
 ) -> Result<Json<ExpenseEntry>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for updating expense entry"))?;
     let prev_rec = ExpenseEntryRepo::get(&mut tx, uid).await?;
     group_guard(&auth, prev_rec.group_uid, &state.db_pool).await?;
     let updated = ExpenseEntryRepo::update(
@@ -116,7 +150,7 @@ pub async fn update_expense_entry(
         },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for updating expense entry"))?;
     Ok(Json(updated))
 }
 
@@ -126,10 +160,10 @@ pub async fn delete_expense_entry(
     Extension(auth): Extension<AuthContext>,
     Path(uid): Path<Uuid>,
 ) -> Result<(), AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for deleting expense entry"))?;
     let prev_rec = ExpenseEntryRepo::get(&mut tx, uid).await?;
     group_guard(&auth, prev_rec.group_uid, &state.db_pool).await?;
     ExpenseEntryRepo::delete(&mut tx, uid).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for deleting expense entry"))?;
     Ok(())
 }

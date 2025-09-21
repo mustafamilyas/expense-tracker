@@ -67,6 +67,29 @@ The API documentation is available at `/swagger-ui` when the server is running.
 
 ## Development
 
+### VSCode Debugging
+
+The project includes VSCode debugger configurations for both the Rust backend and web frontend:
+
+#### Prerequisites
+- Install recommended VSCode extensions (see `.vscode/extensions.json`)
+- For Rust debugging: Install CodeLLDB extension
+- For web debugging: Install Chrome debugger extension
+
+#### Debug Configurations
+1. **Debug Rust Backend**: Launches the expense tracker server with debugging
+2. **Debug Rust Tests**: Runs tests with debugger attached
+3. **Debug Web App**: Launches Vite dev server with Node.js debugging
+4. **Debug Web App (Chrome)**: Launches Chrome with source maps for frontend debugging
+
+#### Environment Setup
+The debugger configurations automatically set up required environment variables:
+- `DATABASE_URL`: PostgreSQL connection string
+- `JWT_SECRET`: Development JWT secret
+- `CHAT_RELAY_SECRET`: Development chat relay secret
+
+Make sure PostgreSQL is running before debugging the Rust application.
+
 ### Adding a New Messenger
 
 1. Create a new module in `src/messengers/`
@@ -84,9 +107,21 @@ impl Messenger for WhatsAppMessenger {
 }
 ```
 
+## CI/CD
+
+The project uses GitHub Actions for continuous integration with code coverage reporting:
+
+- **Main branch**: Runs all tests and builds with coverage
+- **Development branch**: Runs selective tests based on changed files with coverage
+- **Coverage**: Reports uploaded to Codecov, visible on pull requests
+
+See [docs/ci.md](docs/ci.md) for detailed CI documentation.
+
 ## Environment Variables
 
 - `JWT_SECRET`: Secret key for JWT token generation
 - `CHAT_RELAY_SECRET`: Secret for webhook verification
 - `TELEGRAM_BOT_TOKEN`: Token for Telegram bot (optional)
+- `TELEGRAM_LOG_BOT_TOKEN`: Separate bot token for logging (optional)
+- `TELEGRAM_LOG_CHAT_ID`: Chat ID for logging messages (optional)
 - `DATABASE_URL`: PostgreSQL connection string

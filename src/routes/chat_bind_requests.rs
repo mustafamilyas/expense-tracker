@@ -29,7 +29,7 @@ pub async fn create(
     State(state): State<AppState>,
     Json(payload): Json<CreateChatBindRequestPayload>,
 ) -> Result<Json<ChatBindRequest>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for creating chat bind request"))?;
     let created = ChatBindRequestRepo::create(
         &mut tx,
         CreateChatBindRequestDbPayload {
@@ -41,6 +41,6 @@ pub async fn create(
         },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for creating chat bind request"))?;
     Ok(Json(created))
 }

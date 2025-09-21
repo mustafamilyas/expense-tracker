@@ -5,6 +5,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::error::DatabaseError;
+use crate::repos::base::BaseRepo;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct Category {
@@ -31,15 +32,24 @@ pub struct UpdateCategoryDbPayload {
 
 pub struct CategoryRepo;
 
+impl BaseRepo for CategoryRepo {
+    fn get_table_name() -> &'static str {
+        "categories"
+    }
+}
+
 impl CategoryRepo {
     pub async fn list(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<Vec<Category>, DatabaseError> {
-        let rows = sqlx::query_as::<_, Category>(
-            r#"SELECT uid, group_uid, name, description, created_at, updated_at FROM categories ORDER BY created_at DESC"#
-        )
-        .fetch_all(tx.as_mut())
-        .await?;
+        let query = format!(
+            "SELECT uid, group_uid, name, description, created_at, updated_at FROM {} ORDER BY created_at DESC",
+            Self::get_table_name()
+        );
+        let rows = sqlx::query_as::<_, Category>(&query)
+            .fetch_all(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "listing categories"))?;
         Ok(rows)
     }
 
@@ -47,25 +57,44 @@ impl CategoryRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         group_uid: Uuid,
     ) -> Result<Vec<Category>, DatabaseError> {
-        let rows = sqlx::query_as::<_, Category>(
-            r#"SELECT uid, group_uid, name, description, created_at, updated_at FROM categories WHERE group_uid = $1 ORDER BY created_at DESC"#
-        )
-        .bind(group_uid)
-        .fetch_all(tx.as_mut())
-        .await?;
+        let query = format!(
+            "SELECT uid, group_uid, name, description, created_at, updated_at FROM {} WHERE group_uid = $1 ORDER BY created_at DESC",
+            Self::get_table_name()
+        );
+        let rows = sqlx::query_as::<_, Category>(&query)
+            .bind(group_uid)
+            .fetch_all(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "listing categories by group"))?;
         Ok(rows)
+    }
+
+    pub async fn count_by_group(
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        group_uid: Uuid,
+    ) -> Result<i64, DatabaseError> {
+        let query = format!("SELECT COUNT(*) FROM {} WHERE group_uid = $1", Self::get_table_name());
+        let count = sqlx::query_scalar::<_, i64>(&query)
+            .bind(group_uid)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "counting categories by group"))?;
+        Ok(count)
     }
 
     pub async fn get(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         uid: Uuid,
     ) -> Result<Category, DatabaseError> {
-        let row = sqlx::query_as::<_, Category>(
-            r#"SELECT uid, group_uid, name, description, created_at, updated_at FROM categories WHERE uid = $1"#
-        )
-        .bind(uid)
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "SELECT uid, group_uid, name, description, created_at, updated_at FROM {} WHERE uid = $1",
+            Self::get_table_name()
+        );
+        let row = sqlx::query_as::<_, Category>(&query)
+            .bind(uid)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "getting category"))?;
         Ok(row)
     }
 
@@ -74,17 +103,18 @@ impl CategoryRepo {
         payload: CreateCategoryDbPayload,
     ) -> Result<Category, DatabaseError> {
         let uid = Uuid::new_v4();
-        let row = sqlx::query_as::<_, Category>(
-            r#"INSERT INTO categories (uid, group_uid, name, description)
-               VALUES ($1, $2, $3, $4)
-               RETURNING uid, group_uid, name, description, created_at, updated_at"#,
-        )
-        .bind(uid)
-        .bind(payload.group_uid)
-        .bind(payload.name)
-        .bind(payload.description)
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "INSERT INTO {} (uid, group_uid, name, description) VALUES ($1, $2, $3, $4) RETURNING uid, group_uid, name, description, created_at, updated_at",
+            Self::get_table_name()
+        );
+        let row = sqlx::query_as::<_, Category>(&query)
+            .bind(uid)
+            .bind(payload.group_uid)
+            .bind(payload.name)
+            .bind(payload.description)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "creating category"))?;
         Ok(row)
     }
 
@@ -96,15 +126,17 @@ impl CategoryRepo {
         let current = Self::get(tx, uid).await?;
         let name = payload.name.unwrap_or(current.name);
         let description = payload.description.or(current.description);
-        let row = sqlx::query_as::<_, Category>(
-            r#"UPDATE categories SET name = $1, description = $2 WHERE uid = $3
-               RETURNING uid, group_uid, name, description, created_at, updated_at"#,
-        )
-        .bind(name)
-        .bind(description)
-        .bind(uid)
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "UPDATE {} SET name = $1, description = $2 WHERE uid = $3 RETURNING uid, group_uid, name, description, created_at, updated_at",
+            Self::get_table_name()
+        );
+        let row = sqlx::query_as::<_, Category>(&query)
+            .bind(name)
+            .bind(description)
+            .bind(uid)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "updating category"))?;
         Ok(row)
     }
 
@@ -112,10 +144,12 @@ impl CategoryRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         uid: Uuid,
     ) -> Result<(), DatabaseError> {
-        sqlx::query("DELETE FROM categories WHERE uid = $1")
+        let query = format!("DELETE FROM {} WHERE uid = $1", Self::get_table_name());
+        sqlx::query(&query)
             .bind(uid)
             .execute(tx.as_mut())
-            .await?;
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "deleting category"))?;
         Ok(())
     }
 }

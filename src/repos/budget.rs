@@ -4,6 +4,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::error::DatabaseError;
+use crate::repos::base::BaseRepo;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct Budget {
@@ -33,16 +34,24 @@ pub struct UpdateBudgetDbPayload {
 
 pub struct BudgetRepo;
 
+impl BaseRepo for BudgetRepo {
+    fn get_table_name() -> &'static str {
+        "budgets"
+    }
+}
+
 impl BudgetRepo {
     pub async fn list(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<Vec<Budget>, DatabaseError> {
-        let rows = sqlx::query_as::<_, Budget>(
-            r#"SELECT uid, group_uid, category_uid, amount, period_year, period_month FROM budgets
-               ORDER BY group_uid, category_uid"#,
-        )
-        .fetch_all(tx.as_mut())
-        .await?;
+        let query = format!(
+            "SELECT uid, group_uid, category_uid, amount, period_year, period_month FROM {} ORDER BY group_uid, category_uid",
+            Self::get_table_name()
+        );
+        let rows = sqlx::query_as::<_, Budget>(&query)
+            .fetch_all(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "listing budgets"))?;
         Ok(rows)
     }
 
@@ -50,27 +59,47 @@ impl BudgetRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         group_uid: Uuid,
     ) -> Result<Vec<Budget>, DatabaseError> {
-        let rows = sqlx::query_as::<_, Budget>(
-            r#"SELECT uid, group_uid, category_uid, amount, period_year, period_month FROM budgets
-               WHERE group_uid = $1
-               ORDER BY uid"#,
-        )
-        .bind(group_uid)
-        .fetch_all(tx.as_mut())
-        .await?;
+        let query = format!(
+            "SELECT uid, group_uid, category_uid, amount, period_year, period_month FROM {} WHERE group_uid = $1 ORDER BY uid",
+            Self::get_table_name()
+        );
+        let rows = sqlx::query_as::<_, Budget>(&query)
+            .bind(group_uid)
+            .fetch_all(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "listing budgets"))?;
         Ok(rows)
+    }
+
+    pub async fn count_by_group(
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        group_uid: Uuid,
+    ) -> Result<i64, DatabaseError> {
+        let query = format!(
+            "SELECT COUNT(*) FROM {} WHERE group_uid = $1",
+            Self::get_table_name()
+        );
+        let count = sqlx::query_scalar::<_, i64>(&query)
+            .bind(group_uid)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "counting budgets"))?;
+        Ok(count)
     }
 
     pub async fn get(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         uid: Uuid,
     ) -> Result<Budget, DatabaseError> {
-        let row = sqlx::query_as::<_, Budget>(
-            r#"SELECT uid, group_uid, category_uid, amount, period_year, period_month FROM budgets WHERE uid = $1"#
-        )
-        .bind(uid)
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "SELECT uid, group_uid, category_uid, amount, period_year, period_month FROM {} WHERE uid = $1",
+            Self::get_table_name()
+        );
+        let row = sqlx::query_as::<_, Budget>(&query)
+            .bind(uid)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "getting budget"))?;
         Ok(row)
     }
 
@@ -79,19 +108,20 @@ impl BudgetRepo {
         payload: CreateBudgetDbPayload,
     ) -> Result<Budget, DatabaseError> {
         let uid = Uuid::new_v4();
-        let row = sqlx::query_as::<_, Budget>(
-            r#"INSERT INTO budgets (uid, group_uid, category_uid, amount, period_year, period_month)
-               VALUES ($1, $2, $3, $4, $5, $6)
-               RETURNING uid, group_uid, category_uid, amount, period_year, period_month"#,
-        )
-        .bind(uid)
-        .bind(payload.group_uid)
-        .bind(payload.category_uid)
-        .bind(payload.amount)
-        .bind(payload.period_year)
-        .bind(payload.period_month)
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "INSERT INTO {} (uid, group_uid, category_uid, amount, period_year, period_month) VALUES ($1, $2, $3, $4, $5, $6) RETURNING uid, group_uid, category_uid, amount, period_year, period_month",
+            Self::get_table_name()
+        );
+        let row = sqlx::query_as::<_, Budget>(&query)
+            .bind(uid)
+            .bind(payload.group_uid)
+            .bind(payload.category_uid)
+            .bind(payload.amount)
+            .bind(payload.period_year)
+            .bind(payload.period_month)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "creating budget"))?;
         Ok(row)
     }
 
@@ -104,16 +134,18 @@ impl BudgetRepo {
         let amount = payload.amount.unwrap_or(current.amount);
         let period_year = payload.period_year.or(current.period_year);
         let period_month = payload.period_month.or(current.period_month);
-        let row = sqlx::query_as::<_, Budget>(
-            r#"UPDATE budgets SET amount = $1, period_year = $2, period_month = $3 WHERE uid = $4
-               RETURNING uid, group_uid, category_uid, amount, period_year, period_month"#,
-        )
-        .bind(amount)
-        .bind(period_year)
-        .bind(period_month)
-        .bind(uid)
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "UPDATE {} SET amount = $1, period_year = $2, period_month = $3 WHERE uid = $4 RETURNING uid, group_uid, category_uid, amount, period_year, period_month",
+            Self::get_table_name()
+        );
+        let row = sqlx::query_as::<_, Budget>(&query)
+            .bind(amount)
+            .bind(period_year)
+            .bind(period_month)
+            .bind(uid)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "updating budget"))?;
         Ok(row)
     }
 
@@ -121,10 +153,12 @@ impl BudgetRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         uid: Uuid,
     ) -> Result<(), DatabaseError> {
-        sqlx::query("DELETE FROM budgets WHERE uid = $1")
+        let query = format!("DELETE FROM {} WHERE uid = $1", Self::get_table_name());
+        sqlx::query(&query)
             .bind(uid)
             .execute(tx.as_mut())
-            .await?;
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "deleting budget"))?;
         Ok(())
     }
 }

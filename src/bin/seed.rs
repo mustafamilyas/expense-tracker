@@ -6,7 +6,8 @@ use argon2::{
     password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
 };
 use chrono::{DateTime, Utc};
-use serde::Deserialize;
+use expense_tracker::types::SubscriptionTier;
+use serde::{Deserialize, Deserializer};
 use sqlx::PgPool;
 use std::time::Duration;
 use uuid::Uuid;
@@ -114,7 +115,8 @@ struct SeedChatBinding {
 struct SeedSubscription {
     id: Option<Uuid>,
     user_uid: Uuid,
-    tier: String, // 'free' | 'personal' | 'family' | 'team' | 'enterprise'
+    #[serde(deserialize_with = "deserialize_tier")]
+    tier: SubscriptionTier, // 'free' | 'personal' | 'family' | 'team' | 'enterprise'
     #[serde(default = "default_status")]
     status: String, // 'active' | 'inactive' | 'cancelled' | 'expired'
     #[serde(default)]
@@ -127,6 +129,14 @@ struct SeedSubscription {
     created_at: Option<DateTime<Utc>>,
     #[serde(default)]
     updated_at: Option<DateTime<Utc>>,
+}
+
+fn deserialize_tier<'de, D>(deserializer: D) -> Result<SubscriptionTier, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s: String = serde::Deserialize::deserialize(deserializer)?;
+    Ok(SubscriptionTier::from(s))
 }
 
 fn default_status() -> String {

@@ -1,3 +1,5 @@
+use core::convert::From;
+
 use argon2::{
     Argon2,
     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
@@ -11,7 +13,7 @@ use uuid::Uuid;
 
 use crate::{
     auth::AuthContext, error::AppError, repos::{
-        expense_group::{CreateExpenseGroupPayload, ExpenseGroupRepo}, subscription::{CreateSubscriptionDbPayload, SubscriptionRepo}, user::{CreateUserDbPayload, UserRead, UserRepo}
+        expense_group::{CreateExpenseGroupDbPayload, ExpenseGroupRepo}, subscription::{CreateSubscriptionDbPayload, SubscriptionRepo}, user::{CreateUserDbPayload, UserRead, UserRepo}
     }, types::{AppState, SubscriptionTier}
 };
 
@@ -38,9 +40,9 @@ pub fn router() -> axum::Router<AppState> {
     security(("bearerAuth" = []))
 )]
 pub async fn list_users(State(state): State<AppState>) -> Result<Json<Vec<UserRead>>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for listing users"))?;
     let res = UserRepo::list(&mut tx).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for listing users"))?;
     Ok(Json(res))
 }
 
@@ -62,7 +64,7 @@ pub async fn create_user(
         .map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?
         .to_string();
 
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for creating user"))?;
     let user = UserRepo::create(
         &mut tx,
         CreateUserDbPayload {
@@ -75,26 +77,43 @@ pub async fn create_user(
 
     let _ = ExpenseGroupRepo::create(
         &mut tx,
-        CreateExpenseGroupPayload {
+        CreateExpenseGroupDbPayload {
             name: "Default".to_string(),
             owner: user.uid,
         },
     )
     .await?;
 
+    // let _ = SubscriptionRepo::create(
+    //     &mut tx,
+    //     CreateSubscriptionDbPayload {
+    //         user_uid: user.uid,
+    //         tier: SubscriptionTier::Personal,
+    //         status: Some("active".to_string()),
+    //         current_period_start: None,
+    //         current_period_end: None,
+    //     },
+    // ).await?;
+
+    // For demo purposes, every new user gets a personal subscription for three months
+    let start = chrono::Utc::now();
+    // TODO: End exactly 3 months later on the same day, if that day does not exist, use the last day of that month
+    // For example, if start is Jan 31, end should be Apr 30
+    // For now, just add 90 days
+    let end = start + chrono::Duration::days(90);
     let _ = SubscriptionRepo::create(
         &mut tx,
         CreateSubscriptionDbPayload {
             user_uid: user.uid,
-            tier: SubscriptionTier::Free,
+            tier: SubscriptionTier::Personal,
             status: Some("active".to_string()),
-            current_period_start: None,
-            current_period_end: None,
+            current_period_start: Some(start),
+            current_period_end: Some(end),
         },
     ).await?;
 
 
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for creating user"))?;
 
     Ok(Json(UserRead {
         uid: user.uid,
@@ -118,14 +137,11 @@ pub async fn get_me(
     Extension(auth): Extension<AuthContext>,
 ) -> Result<Json<UserRead>, AppError> {
     let user_uid = auth.user_uid;
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
-    let user = UserRepo::get(&mut tx, user_uid).await.ok();
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for getting user"))?;
+    let user = UserRepo::get(&mut tx, user_uid).await?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for getting user"))?;
 
-    match user {
-        Some(u) => Ok(Json(u)),
-        None => Err(AppError::NotFound),
-    }
+    Ok(Json(user))
 }
 
 // TODO: restrict to admin users or the user themselves
@@ -142,7 +158,7 @@ pub async fn update_user(
     Path(uid): Path<Uuid>,
     Json(payload): Json<UpdateUserPayload>,
 ) -> Result<Json<UserRead>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for updating user"))?;
     let new_phash = match &payload.password {
         Some(pw) => {
             let salt = SaltString::generate(&mut OsRng);
@@ -165,7 +181,7 @@ pub async fn update_user(
         },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for updating user"))?;
     Ok(Json(updated_user))
 }
 
@@ -186,11 +202,11 @@ pub async fn login_user(
     State(state): State<AppState>,
     Json(payload): Json<LoginUserPayload>,
 ) -> Result<Json<LoginResponse>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for user login"))?;
     let user = UserRepo::get_by_email(&mut tx, &payload.email)
         .await
         .map_err(|_| AppError::Unauthorized("Invalid email or password".into()))?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for user login"))?;
 
     let phash =
         PasswordHash::new(&user.phash).map_err(|e| AppError::Internal(anyhow::anyhow!(e)))?;

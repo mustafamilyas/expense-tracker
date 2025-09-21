@@ -1,4 +1,4 @@
-import { Route, Routes, A, Navigate, useNavigate, useSearchParams } from '@solidjs/router';
+import { Route, A, Navigate, useNavigate, useSearchParams } from '@solidjs/router';
 import { Show } from 'solid-js';
 import { auth } from './lib/auth';
 import SignIn from './routes/SignIn';
@@ -28,13 +28,13 @@ function Shell(props: { children: any }) {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate href="/dashboard" />} />
+    <>
+      <Route path="/" component={()=><Navigate href="/dashboard" />} />
       <Route path="/sign-in" component={() => <Shell><SignIn /></Shell>} />
       <Route path="/register" component={() => <Shell><Register /></Shell>} />
       <Route path="/dashboard" component={() => <Shell><Guard><Dashboard /></Guard></Shell>} />
       <Route path="/chat-binding/confirm/:id" component={() => <Shell><Guard><ChatBindConfirm /></Guard></Shell>} />
-      <Route path="*" element={<Shell><div class="card">Not found</div></Shell>} />
-    </Routes>
+      <Route path="*" component={()=><Shell><div class="card">Not found</div></Shell>} />
+    </>
   );
 }

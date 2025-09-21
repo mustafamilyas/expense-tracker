@@ -38,11 +38,17 @@ pub async fn list(
     Extension(auth): Extension<AuthContext>,
     Path(category_uid): Path<Uuid>,
 ) -> Result<Json<Vec<CategoryAlias>>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state
+        .db_pool
+        .begin()
+        .await
+        .map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for listing category aliases"))?;
     let category = CategoryRepo::get(&mut tx, category_uid).await?;
     group_guard(&auth, category.group_uid, &state.db_pool).await?;
     let res = CategoryAliasRepo::list_by_category(&mut tx, category_uid).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit()
+        .await
+        .map_err(|e| AppError::from_sqlx_error(e, "committing transaction for listing category aliases"))?;
     Ok(Json(res))
 }
 
@@ -60,7 +66,11 @@ pub async fn create(
     Json(payload): Json<CreateCategoryAliasPayload>,
 ) -> Result<Json<CategoryAlias>, AppError> {
     group_guard(&auth, payload.group_uid, &state.db_pool).await?;
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state
+        .db_pool
+        .begin()
+        .await
+        .map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for creating category alias"))?;
     let created = CategoryAliasRepo::create(
         &mut tx,
         CreateCategoryAliasDbPayload {
@@ -70,7 +80,9 @@ pub async fn create(
         },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit()
+        .await
+        .map_err(|e| AppError::from_sqlx_error(e, "committing transaction for creating category alias"))?;
     Ok(Json(created))
 }
 
@@ -87,7 +99,11 @@ pub async fn update(
     Path(alias_uid): Path<Uuid>,
     Json(payload): Json<UpdateCategoryAliasPayload>,
 ) -> Result<Json<CategoryAlias>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state
+        .db_pool
+        .begin()
+        .await
+        .map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for updating category alias"))?;
     let prev_alias = CategoryAliasRepo::get(&mut tx, alias_uid).await?;
     group_guard(&auth, prev_alias.group_uid, &state.db_pool).await?;
     let updated = CategoryAliasRepo::update(
@@ -99,7 +115,9 @@ pub async fn update(
         },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit()
+        .await
+        .map_err(|e| AppError::from_sqlx_error(e, "committing transaction for updating category alias"))?;
     Ok(Json(updated))
 }
 
@@ -109,10 +127,16 @@ pub async fn delete_(
     Extension(auth): Extension<AuthContext>,
     Path(alias_uid): Path<Uuid>,
 ) -> Result<(), AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state
+        .db_pool
+        .begin()
+        .await
+        .map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for deleting category alias"))?;
     let prev_alias = CategoryAliasRepo::get(&mut tx, alias_uid).await?;
     group_guard(&auth, prev_alias.group_uid, &state.db_pool).await?;
     CategoryAliasRepo::delete(&mut tx, alias_uid).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit()
+        .await
+        .map_err(|e| AppError::from_sqlx_error(e, "committing transaction for deleting category alias"))?;
     Ok(())
 }

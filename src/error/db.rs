@@ -50,9 +50,3 @@ impl DatabaseError {
         }
     }
 }
-
-impl From<sqlx::Error> for DatabaseError {
-    fn from(err: sqlx::Error) -> Self {
-        DatabaseError::from_sqlx_error(err, "Database operation failed")
-    }
-}

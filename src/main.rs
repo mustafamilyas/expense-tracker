@@ -2,14 +2,32 @@ use anyhow::Result;
 use expense_tracker::{
     app, db,
     messengers::{MessengerManager, telegram::TelegramMessenger},
+    reports::ReportScheduler,
+    telegram_logger::TelegramLogger,
     types::AppState,
 };
 use std::env;
+use std::sync::Arc;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // initialize tracing
-    tracing_subscriber::fmt::init();
+    let telegram_log_token = env::var("TELEGRAM_LOG_BOT_TOKEN").ok();
+    let telegram_log_chat_id = env::var("TELEGRAM_LOG_CHAT_ID").ok();
+
+    let registry = tracing_subscriber::registry();
+
+    if let (Some(token), Some(chat_id_str)) = (telegram_log_token, telegram_log_chat_id) {
+        if let Ok(chat_id) = chat_id_str.parse::<i64>() {
+            let telegram_logger = TelegramLogger::new(token, chat_id);
+            registry.with(telegram_logger).with(tracing_subscriber::fmt::layer()).init();
+        } else {
+            registry.with(tracing_subscriber::fmt::layer()).init();
+        }
+    } else {
+        registry.with(tracing_subscriber::fmt::layer()).init();
+    }
 
     // load environment variables from .env file
     dotenv::dotenv()?;
@@ -48,10 +66,20 @@ async fn main() -> Result<()> {
         messenger_manager.add_messenger(Box::new(telegram_messenger));
     }
 
+    // Create Arc for messenger manager
+    let messenger_manager_arc = Arc::new(messenger_manager);
+
     // Start messengers
-    if let Err(e) = messenger_manager.start_all().await {
+    if let Err(e) = messenger_manager_arc.start_all().await {
         tracing::error!("Failed to start messengers: {:?}", e);
         return Err(anyhow::anyhow!("Failed to start messengers"));
+    }
+
+    // Start report scheduler
+    let report_scheduler = ReportScheduler::new(db_pool.clone(), messenger_manager_arc.clone());
+    if let Err(e) = report_scheduler.start().await {
+        tracing::error!("Failed to start report scheduler: {:?}", e);
+        return Err(anyhow::anyhow!("Failed to start report scheduler"));
     }
 
     // build our application with a route
@@ -60,6 +88,7 @@ async fn main() -> Result<()> {
         db_pool,
         jwt_secret,
         chat_relay_secret,
+        messenger_manager: Some(messenger_manager_arc),
     });
 
     // run our app with hyper, listening globally on port 3000

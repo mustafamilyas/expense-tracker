@@ -5,6 +5,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::error::DatabaseError;
+use crate::repos::base::BaseRepo;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct ChatBinding {
@@ -35,16 +36,24 @@ pub struct UpdateChatBindingDbPayload {
 
 pub struct ChatBindingRepo;
 
+impl BaseRepo for ChatBindingRepo {
+    fn get_table_name() -> &'static str {
+        "chat_bindings"
+    }
+}
+
 impl ChatBindingRepo {
     pub async fn list(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<Vec<ChatBinding>, DatabaseError> {
-        let rows = sqlx::query_as::<_, ChatBinding>(
-            r#"SELECT id, group_uid, platform::text as platform, p_uid, status::text as status, bound_by, bound_at, revoked_at
-               FROM chat_bindings ORDER BY bound_at DESC"#
-        )
-        .fetch_all(tx.as_mut())
-        .await?;
+        let query = format!(
+            "SELECT id, group_uid, platform::text as platform, p_uid, status::text as status, bound_by, bound_at, revoked_at FROM {} ORDER BY bound_at DESC",
+            Self::get_table_name()
+        );
+        let rows = sqlx::query_as::<_, ChatBinding>(&query)
+            .fetch_all(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "listing chat bindings"))?;
         Ok(rows)
     }
 
@@ -52,13 +61,15 @@ impl ChatBindingRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         id: Uuid,
     ) -> Result<ChatBinding, DatabaseError> {
-        let row = sqlx::query_as::<_, ChatBinding>(
-            r#"SELECT id, group_uid, platform::text as platform, p_uid, status::text as status, bound_by, bound_at, revoked_at
-               FROM chat_bindings WHERE id = $1"#
-        )
-        .bind(id)
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "SELECT id, group_uid, platform::text as platform, p_uid, status::text as status, bound_by, bound_at, revoked_at FROM {} WHERE id = $1",
+            Self::get_table_name()
+        );
+        let row = sqlx::query_as::<_, ChatBinding>(&query)
+            .bind(id)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "getting chat binding"))?;
         Ok(row)
     }
 
@@ -67,19 +78,20 @@ impl ChatBindingRepo {
         payload: CreateChatBindingDbPayload,
     ) -> Result<ChatBinding, DatabaseError> {
         let id = Uuid::new_v4();
-        let row = sqlx::query_as::<_, ChatBinding>(
-            r#"INSERT INTO chat_bindings (id, group_uid, platform, p_uid, status, bound_by)
-               VALUES ($1, $2, CAST($3 AS chat_platform), $4, COALESCE(CAST($5 AS binding_status), 'active'::binding_status), $6)
-               RETURNING id, group_uid, platform::text as platform, p_uid, status::text as status, bound_by, bound_at, revoked_at"#
-        )
-        .bind(id)
-        .bind(payload.group_uid)
-        .bind(payload.platform)
-        .bind(payload.p_uid)
-        .bind(payload.status)
-        .bind(payload.bound_by)
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "INSERT INTO {} (id, group_uid, platform, p_uid, status, bound_by) VALUES ($1, $2, CAST($3 AS chat_platform), $4, COALESCE(CAST($5 AS binding_status), 'active'::binding_status), $6) RETURNING id, group_uid, platform::text as platform, p_uid, status::text as status, bound_by, bound_at, revoked_at",
+            Self::get_table_name()
+        );
+        let row = sqlx::query_as::<_, ChatBinding>(&query)
+            .bind(id)
+            .bind(payload.group_uid)
+            .bind(payload.platform)
+            .bind(payload.p_uid)
+            .bind(payload.status)
+            .bind(payload.bound_by)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "creating chat binding"))?;
         Ok(row)
     }
 
@@ -94,15 +106,17 @@ impl ChatBindingRepo {
             Some(v) => v,
             None => current.revoked_at,
         };
-        let row = sqlx::query_as::<_, ChatBinding>(
-            r#"UPDATE chat_bindings SET status = CAST($1 AS binding_status), revoked_at = $2 WHERE id = $3
-               RETURNING id, group_uid, platform::text as platform, p_uid, status::text as status, bound_by, bound_at, revoked_at"#
-        )
-        .bind(status)
-        .bind(revoked_at)
-        .bind(id)
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "UPDATE {} SET status = CAST($1 AS binding_status), revoked_at = $2 WHERE id = $3 RETURNING id, group_uid, platform::text as platform, p_uid, status::text as status, bound_by, bound_at, revoked_at",
+            Self::get_table_name()
+        );
+        let row = sqlx::query_as::<_, ChatBinding>(&query)
+            .bind(status)
+            .bind(revoked_at)
+            .bind(id)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "updating chat binding"))?;
         Ok(row)
     }
 
@@ -110,10 +124,12 @@ impl ChatBindingRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         id: Uuid,
     ) -> Result<(), DatabaseError> {
-        sqlx::query("DELETE FROM chat_bindings WHERE id = $1")
+        let query = format!("DELETE FROM {} WHERE id = $1", Self::get_table_name());
+        sqlx::query(&query)
             .bind(id)
             .execute(tx.as_mut())
-            .await?;
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "deleting chat binding"))?;
         Ok(())
     }
 }

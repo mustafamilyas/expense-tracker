@@ -4,6 +4,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::error::DatabaseError;
+use crate::repos::base::BaseRepo;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct CategoryAlias {
@@ -28,15 +29,24 @@ pub struct UpdateCategoryAliasDbPayload {
 
 pub struct CategoryAliasRepo;
 
+impl BaseRepo for CategoryAliasRepo {
+    fn get_table_name() -> &'static str {
+        "categories_aliases"
+    }
+}
+
 impl CategoryAliasRepo {
     pub async fn list(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<Vec<CategoryAlias>, DatabaseError> {
-        let rows = sqlx::query_as::<_, CategoryAlias>(
-            r#"SELECT alias_uid, group_uid, alias, category_uid FROM categories_aliases ORDER BY alias"#
-        )
-        .fetch_all(tx.as_mut())
-        .await?;
+        let query = format!(
+            "SELECT alias_uid, group_uid, alias, category_uid FROM {} ORDER BY alias",
+            Self::get_table_name()
+        );
+        let rows = sqlx::query_as::<_, CategoryAlias>(&query)
+            .fetch_all(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "listing category aliases"))?;
         Ok(rows)
     }
 
@@ -44,12 +54,17 @@ impl CategoryAliasRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         category_uid: Uuid,
     ) -> Result<Vec<CategoryAlias>, DatabaseError> {
-        let rows = sqlx::query_as::<_, CategoryAlias>(
-            r#"SELECT alias_uid, group_uid, alias, category_uid FROM categories_aliases WHERE category_uid = $1 ORDER BY alias"#
-        )
-        .bind(category_uid)
-        .fetch_all(tx.as_mut())
-        .await?;
+        let query = format!(
+            "SELECT alias_uid, group_uid, alias, category_uid FROM {} WHERE category_uid = $1 ORDER BY alias",
+            Self::get_table_name()
+        );
+        let rows = sqlx::query_as::<_, CategoryAlias>(&query)
+            .bind(category_uid)
+            .fetch_all(tx.as_mut())
+            .await
+            .map_err(|e| {
+                DatabaseError::from_sqlx_error(e, "listing category aliases by category")
+            })?;
         Ok(rows)
     }
 
@@ -57,12 +72,15 @@ impl CategoryAliasRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         alias_uid: Uuid,
     ) -> Result<CategoryAlias, DatabaseError> {
-        let row = sqlx::query_as::<_, CategoryAlias>(
-            r#"SELECT alias_uid, group_uid, alias, category_uid FROM categories_aliases WHERE alias_uid = $1"#
-        )
-        .bind(alias_uid)
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "SELECT alias_uid, group_uid, alias, category_uid FROM {} WHERE alias_uid = $1",
+            Self::get_table_name()
+        );
+        let row = sqlx::query_as::<_, CategoryAlias>(&query)
+            .bind(alias_uid)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "getting category alias"))?;
         Ok(row)
     }
 
@@ -71,17 +89,18 @@ impl CategoryAliasRepo {
         payload: CreateCategoryAliasDbPayload,
     ) -> Result<CategoryAlias, DatabaseError> {
         let alias_uid = Uuid::new_v4();
-        let row = sqlx::query_as::<_, CategoryAlias>(
-            r#"INSERT INTO categories_aliases (alias_uid, group_uid, alias, category_uid)
-               VALUES ($1, $2, $3, $4)
-               RETURNING alias_uid, group_uid, alias, category_uid"#,
-        )
-        .bind(alias_uid)
-        .bind(payload.group_uid)
-        .bind(payload.alias)
-        .bind(payload.category_uid)
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "INSERT INTO {} (alias_uid, group_uid, alias, category_uid) VALUES ($1, $2, $3, $4) RETURNING alias_uid, group_uid, alias, category_uid",
+            Self::get_table_name()
+        );
+        let row = sqlx::query_as::<_, CategoryAlias>(&query)
+            .bind(alias_uid)
+            .bind(payload.group_uid)
+            .bind(payload.alias)
+            .bind(payload.category_uid)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "creating category alias"))?;
         Ok(row)
     }
 
@@ -93,15 +112,17 @@ impl CategoryAliasRepo {
         let current = Self::get(tx, alias_uid).await?;
         let alias = payload.alias.unwrap_or(current.alias);
         let category_uid = payload.category_uid.unwrap_or(current.category_uid);
-        let row = sqlx::query_as::<_, CategoryAlias>(
-            r#"UPDATE categories_aliases SET alias = $1, category_uid = $2 WHERE alias_uid = $3
-               RETURNING alias_uid, group_uid, alias, category_uid"#,
-        )
-        .bind(alias)
-        .bind(category_uid)
-        .bind(alias_uid)
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "UPDATE {} SET alias = $1, category_uid = $2 WHERE alias_uid = $3 RETURNING alias_uid, group_uid, alias, category_uid",
+            Self::get_table_name()
+        );
+        let row = sqlx::query_as::<_, CategoryAlias>(&query)
+            .bind(alias)
+            .bind(category_uid)
+            .bind(alias_uid)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "updating category alias"))?;
         Ok(row)
     }
 
@@ -109,10 +130,15 @@ impl CategoryAliasRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         alias_uid: Uuid,
     ) -> Result<(), DatabaseError> {
-        sqlx::query("DELETE FROM categories_aliases WHERE alias_uid = $1")
+        let query = format!(
+            "DELETE FROM {} WHERE alias_uid = $1",
+            Self::get_table_name()
+        );
+        sqlx::query(&query)
             .bind(alias_uid)
             .execute(tx.as_mut())
-            .await?;
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "deleting category alias"))?;
         Ok(())
     }
 }

@@ -5,7 +5,7 @@ use crate::{repos as repo, routes, types};
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        routes::users::list_users,
+        // routes::users::list_users,
         routes::users::get_me,
         routes::users::create_user,
         routes::users::update_user,
@@ -61,8 +61,7 @@ use crate::{repos as repo, routes, types};
         repo::category::Category,
         repo::category_alias::CategoryAlias,
         repo::expense_entry::ExpenseEntry,
-        repo::expense_group::CreateExpenseGroupPayload,
-        repo::expense_group::UpdateExpenseGroupPayload,
+        repo::expense_group::UpdateExpenseGroupDbPayload,
         repo::budget::Budget,
         repo::chat_bind_request::ChatBindRequest,
         repo::chat_binding::ChatBinding,
@@ -72,6 +71,7 @@ use crate::{repos as repo, routes, types};
         routes::users::UpdateUserPayload,
         routes::users::LoginUserPayload,
         routes::users::LoginResponse,
+        routes::expense_groups::CreateExpenseGroupPayload,
         routes::expense_entry::CreateExpenseEntryPayload,
         
         routes::categories::CreateCategoryPayload,

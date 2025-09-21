@@ -17,15 +17,25 @@ use crate::{
 
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
-        .route("/", axum::routing::get(list).post(create))
-        .route("/{id}", axum::routing::get(get).put(update).delete(delete_))
+        .route("/group-members", axum::routing::get(list).post(create))
+        .route(
+            "/group-members/{id}",
+            axum::routing::get(get).put(update).delete(delete_),
+        )
 }
+
+/*
+Before activating these routes, make sure to:
+1. What can users do with group members? (e.g., only admins can add/remove members)
+2. Ensure proper authentication and authorization checks are in place.
+3. What can group members see and do? (e.g., can they see other members, their roles, etc.)
+ */
 
 #[utoipa::path(get, path = "/group-members", responses((status = 200, body = [GroupMember])), tag = "Group Members", operation_id = "listGroupMembers", security(("bearerAuth" = [])))]
 pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<GroupMember>>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for listing group members"))?;
     let res = GroupMemberRepo::list(&mut tx).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for listing group members"))?;
     Ok(Json(res))
 }
 
@@ -34,9 +44,9 @@ pub async fn get(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<GroupMember>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for getting group member"))?;
     let res = GroupMemberRepo::get(&mut tx, id).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for getting group member"))?;
     Ok(Json(res))
 }
 
@@ -56,7 +66,7 @@ pub async fn create(
     if matches!(auth.source, AuthSource::Chat) && auth.group_uid != Some(payload.group_uid) {
         return Err(AppError::Unauthorized("Group scope mismatch".into()));
     }
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for creating group member"))?;
     let created = GroupMemberRepo::create(
         &mut tx,
         CreateGroupMemberDbPayload {
@@ -66,7 +76,7 @@ pub async fn create(
         },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for creating group member"))?;
     Ok(Json(created))
 }
 
@@ -81,21 +91,21 @@ pub async fn update(
     Path(id): Path<Uuid>,
     Json(payload): Json<UpdateGroupMemberPayload>,
 ) -> Result<Json<GroupMember>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for updating group member"))?;
     let updated = GroupMemberRepo::update(
         &mut tx,
         id,
         UpdateGroupMemberDbPayload { role: payload.role },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for updating group member"))?;
     Ok(Json(updated))
 }
 
 #[utoipa::path(delete, path = "/group-members/{id}", params(("id" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Group Members", operation_id = "deleteGroupMember", security(("bearerAuth" = [])))]
 pub async fn delete_(State(state): State<AppState>, Path(id): Path<Uuid>) -> Result<(), AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for deleting group member"))?;
     GroupMemberRepo::delete(&mut tx, id).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for deleting group member"))?;
     Ok(())
 }

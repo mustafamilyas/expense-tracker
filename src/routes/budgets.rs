@@ -9,7 +9,11 @@ use uuid::Uuid;
 use crate::{
     auth::{AuthContext, group_guard::group_guard},
     error::AppError,
-    repos::budget::{Budget, BudgetRepo, CreateBudgetDbPayload, UpdateBudgetDbPayload},
+    middleware::tier::check_tier_limit,
+    repos::{
+        budget::{Budget, BudgetRepo, CreateBudgetDbPayload, UpdateBudgetDbPayload},
+        subscription::SubscriptionRepo,
+    },
     types::AppState,
 };
 
@@ -30,9 +34,9 @@ pub async fn list(
     Extension(auth): Extension<AuthContext>,
 ) -> Result<Json<Vec<Budget>>, AppError> {
     group_guard(&auth, group_uid, &state.db_pool).await?;
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "Failed to begin transaction"))?;
     let res = BudgetRepo::list_by_group(&mut tx, group_uid).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "Failed to commit transaction"))?;
     Ok(Json(res))
 }
 
@@ -42,10 +46,10 @@ pub async fn get(
     Path(uid): Path<Uuid>,
     Extension(auth): Extension<AuthContext>,
 ) -> Result<Json<Budget>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for getting budget"))?;
     let res = BudgetRepo::get(&mut tx, uid).await?;
     group_guard(&auth, res.group_uid, &state.db_pool).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for getting budget"))?;
     Ok(Json(res))
 }
 
@@ -65,7 +69,15 @@ pub async fn create(
     Json(payload): Json<CreateBudgetPayload>,
 ) -> Result<Json<Budget>, AppError> {
     group_guard(&auth, payload.group_uid, &state.db_pool).await?;
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for creating budget"))?;
+
+    // Get user's subscription
+    let subscription = SubscriptionRepo::get_by_user(&mut tx, auth.user_uid).await?;
+
+    // Check budget limit per group
+    let current_budgets = BudgetRepo::count_by_group(&mut tx, payload.group_uid).await?;
+    check_tier_limit(&subscription, "budgets_per_group", current_budgets as i32)?;
+
     let created = BudgetRepo::create(
         &mut tx,
         CreateBudgetDbPayload {
@@ -77,7 +89,7 @@ pub async fn create(
         },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for creating budget"))?;
     Ok(Json(created))
 }
 
@@ -95,7 +107,7 @@ pub async fn update(
     Path(uid): Path<Uuid>,
     Json(payload): Json<UpdateBudgetPayload>,
 ) -> Result<Json<Budget>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for updating budget"))?;
     let prev_rec = BudgetRepo::get(&mut tx, uid).await?;
     group_guard(&auth, prev_rec.group_uid, &state.db_pool).await?;
     let updated = BudgetRepo::update(
@@ -108,7 +120,7 @@ pub async fn update(
         },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for updating budget"))?;
     Ok(Json(updated))
 }
 
@@ -118,10 +130,10 @@ pub async fn delete_(
     Path(uid): Path<Uuid>,
     Extension(auth): Extension<AuthContext>,
 ) -> Result<(), AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from(e))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for deleting budget"))?;
     let budget = BudgetRepo::get(&mut tx, uid).await?;
     group_guard(&auth, budget.group_uid, &state.db_pool).await?;
     BudgetRepo::delete(&mut tx, uid).await?;
-    tx.commit().await.map_err(|e| AppError::from(e))?;
+    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for deleting budget"))?;
     Ok(())
 }

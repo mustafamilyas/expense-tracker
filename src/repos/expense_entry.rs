@@ -5,8 +5,15 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::error::DatabaseError;
+use crate::repos::base::BaseRepo;
 
 pub struct ExpenseEntryRepo;
+
+impl BaseRepo for ExpenseEntryRepo {
+    fn get_table_name() -> &'static str {
+        "expense_entries"
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct ExpenseEntry {
@@ -60,33 +67,34 @@ impl ExpenseEntryRepo {
         payload: CreateExpenseEntryDbPayload,
     ) -> Result<ExpenseEntry, DatabaseError> {
         let uid = uuid::Uuid::new_v4();
-        let rec = sqlx::query_as::<_, ExpenseEntry>(
-            r#"
-            INSERT INTO expense_entries (uid, price, product, group_uid, category_uid, created_by)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING uid, price, product, created_by, group_uid, category_uid, created_at, updated_at
-            "#
-        )
-        .bind(uid)
-        .bind(payload.price)
-        .bind(payload.product)
-        .bind(payload.group_uid)
-        .bind(payload.category_uid)
-        .bind("system")
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "INSERT INTO {} (uid, price, product, group_uid, category_uid, created_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING uid, price, product, created_by, group_uid, category_uid, created_at, updated_at",
+            Self::get_table_name()
+        );
+        let rec = sqlx::query_as::<_, ExpenseEntry>(&query)
+            .bind(uid)
+            .bind(payload.price)
+            .bind(payload.product)
+            .bind(payload.group_uid)
+            .bind(payload.category_uid)
+            .bind("system")
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "creating expense entry"))?;
         Ok(rec)
     }
 
     pub async fn list(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<Vec<ExpenseEntry>, DatabaseError> {
-        let recs = sqlx::query_as::<_, ExpenseEntry>(
-            r#"SELECT uid, price, product, created_by, group_uid, category_uid, created_at, updated_at
-               FROM expense_entries ORDER BY created_at DESC"#
-        )
-        .fetch_all(tx.as_mut())
-        .await?;
+        let query = format!(
+            "SELECT uid, price, product, created_by, group_uid, category_uid, created_at, updated_at FROM {} ORDER BY created_at DESC",
+            Self::get_table_name()
+        );
+        let recs = sqlx::query_as::<_, ExpenseEntry>(&query)
+            .fetch_all(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "listing expense entries"))?;
         Ok(recs)
     }
 
@@ -94,13 +102,15 @@ impl ExpenseEntryRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         group_uid: Uuid,
     ) -> Result<Vec<ExpenseEntry>, DatabaseError> {
-        let recs = sqlx::query_as::<_, ExpenseEntry>(
-            r#"SELECT uid, price, product, created_by, group_uid, category_uid, created_at, updated_at
-               FROM expense_entries WHERE group_uid = $1 ORDER BY created_at DESC"#
-        )
-        .bind(group_uid)
-        .fetch_all(tx.as_mut())
-        .await?;
+        let query = format!(
+            "SELECT uid, price, product, created_by, group_uid, category_uid, created_at, updated_at FROM {} WHERE group_uid = $1 ORDER BY created_at DESC",
+            Self::get_table_name()
+        );
+        let recs = sqlx::query_as::<_, ExpenseEntry>(&query)
+            .bind(group_uid)
+            .fetch_all(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "listing expense entries by group"))?;
         Ok(recs)
     }
 
@@ -108,13 +118,15 @@ impl ExpenseEntryRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         uid: Uuid,
     ) -> Result<ExpenseEntry, DatabaseError> {
-        let rec = sqlx::query_as::<_, ExpenseEntry>(
-            r#"SELECT uid, price, product, created_by, group_uid, category_uid, created_at, updated_at
-               FROM expense_entries WHERE uid = $1"#
-        )
-        .bind(uid)
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "SELECT uid, price, product, created_by, group_uid, category_uid, created_at, updated_at FROM {} WHERE uid = $1",
+            Self::get_table_name()
+        );
+        let rec = sqlx::query_as::<_, ExpenseEntry>(&query)
+            .bind(uid)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "getting expense entry"))?;
         Ok(rec)
     }
 
@@ -127,18 +139,18 @@ impl ExpenseEntryRepo {
         let price = payload.price.unwrap_or(current.price);
         let product = payload.product.unwrap_or(current.product);
         let category_uid = payload.category_uid.unwrap_or(current.category_uid);
-        let rec = sqlx::query_as::<_, ExpenseEntry>(
-            r#"UPDATE expense_entries
-               SET price = $1, product = $2, category_uid = $3, updated_at = now()
-               WHERE uid = $4
-               RETURNING uid, price, product, created_by, group_uid, category_uid, created_at, updated_at"#
-        )
-        .bind(price)
-        .bind(product)
-        .bind(category_uid)
-        .bind(uid)
-        .fetch_one(tx.as_mut())
-        .await?;
+        let query = format!(
+            "UPDATE {} SET price = $1, product = $2, category_uid = $3, updated_at = now() WHERE uid = $4 RETURNING uid, price, product, created_by, group_uid, category_uid, created_at, updated_at",
+            Self::get_table_name()
+        );
+        let rec = sqlx::query_as::<_, ExpenseEntry>(&query)
+            .bind(price)
+            .bind(product)
+            .bind(category_uid)
+            .bind(uid)
+            .fetch_one(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "updating expense entry"))?;
         Ok(rec)
     }
 
@@ -146,10 +158,12 @@ impl ExpenseEntryRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         uid: Uuid,
     ) -> Result<(), DatabaseError> {
-        sqlx::query("DELETE FROM expense_entries WHERE uid = $1")
+        let query = format!("DELETE FROM {} WHERE uid = $1", Self::get_table_name());
+        sqlx::query(&query)
             .bind(uid)
             .execute(tx.as_mut())
-            .await?;
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "deleting expense entry"))?;
         Ok(())
     }
 }
