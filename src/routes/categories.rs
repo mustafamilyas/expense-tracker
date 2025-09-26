@@ -23,7 +23,7 @@ pub fn router() -> axum::Router<AppState> {
         .route("/categories", axum::routing::post(create))
         .route(
             "/categories/{uid}",
-            axum::routing::get(get).put(update).delete(delete_),
+            axum::routing::get(get).put(update),
         )
 }
 

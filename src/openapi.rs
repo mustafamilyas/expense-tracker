@@ -27,7 +27,7 @@ use crate::{repos as repo, routes, types};
         routes::categories::get,
         routes::categories::create,
         routes::categories::update,
-        routes::categories::delete_,
+        // routes::categories::delete_,
 
         routes::categories_aliases::list,
         routes::categories_aliases::create,

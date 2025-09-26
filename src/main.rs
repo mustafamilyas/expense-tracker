@@ -21,7 +21,10 @@ async fn main() -> Result<()> {
     if let (Some(token), Some(chat_id_str)) = (telegram_log_token, telegram_log_chat_id) {
         if let Ok(chat_id) = chat_id_str.parse::<i64>() {
             let telegram_logger = TelegramLogger::new(token, chat_id);
-            registry.with(telegram_logger).with(tracing_subscriber::fmt::layer()).init();
+            registry
+                .with(telegram_logger)
+                .with(tracing_subscriber::fmt::layer())
+                .init();
         } else {
             registry.with(tracing_subscriber::fmt::layer()).init();
         }
@@ -76,11 +79,11 @@ async fn main() -> Result<()> {
     }
 
     // Start report scheduler
-    let report_scheduler = ReportScheduler::new(db_pool.clone(), messenger_manager_arc.clone());
-    if let Err(e) = report_scheduler.start().await {
-        tracing::error!("Failed to start report scheduler: {:?}", e);
-        return Err(anyhow::anyhow!("Failed to start report scheduler"));
-    }
+    // let report_scheduler = ReportScheduler::new(db_pool.clone(), messenger_manager_arc.clone());
+    // if let Err(e) = report_scheduler.start().await {
+    //     tracing::error!("Failed to start report scheduler: {:?}", e);
+    //     return Err(anyhow::anyhow!("Failed to start report scheduler"));
+    // }
 
     // build our application with a route
     let app = app::build_router(AppState {
