@@ -2,7 +2,6 @@ use axum::{
     extract::{Path, State}, Extension, Json
 };
 use serde::Deserialize;
-use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -23,7 +22,7 @@ pub fn router() -> axum::Router<AppState> {
         .route("/expense-groups", axum::routing::get(list).post(create))
         .route(
             "/expense-groups/{uid}",
-            axum::routing::get(get).put(update).delete(delete_),
+            axum::routing::get(get).put(update),
         )
 }
 
@@ -80,7 +79,7 @@ pub async fn get(
     Ok(Json(res))
 }
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, serde::Serialize, ToSchema)]
 pub struct CreateExpenseGroupPayload {
     pub name: String,
 }

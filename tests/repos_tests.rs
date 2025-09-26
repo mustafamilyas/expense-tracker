@@ -238,3 +238,153 @@ async fn tier_limits_enforcement_test() -> Result<()> {
     drop(tx);
     Ok(())
 }
+
+#[tokio::test]
+async fn expense_group_repo_crud() -> Result<()> {
+    let Some(pool) = ensure_db_pool().await? else {
+        return Ok(());
+    };
+    let mut tx = pool.begin().await?;
+
+    // Create a test user first
+    let user = UserRepo::create(
+        &mut tx,
+        CreateUserDbPayload {
+            email: format!("expense-group-owner+{}@example.com", Uuid::new_v4()),
+            phash: "hash".into(),
+            start_over_date: 1,
+        },
+    )
+    .await?;
+
+    // Test create
+    let group_name = "Test Expense Group";
+    let created = ExpenseGroupRepo::create(
+        &mut tx,
+        CreateExpenseGroupDbPayload {
+            name: group_name.into(),
+            owner: user.uid,
+        },
+    )
+    .await?;
+    assert_eq!(created.name, group_name);
+    assert_eq!(created.owner, user.uid);
+    assert!(!created.uid.is_nil());
+
+    // Test get
+    let fetched = ExpenseGroupRepo::get(&mut tx, created.uid).await?;
+    assert_eq!(fetched.uid, created.uid);
+    assert_eq!(fetched.name, group_name);
+    assert_eq!(fetched.owner, user.uid);
+
+    // Test get_all_by_owner
+    let user_groups = ExpenseGroupRepo::get_all_by_owner(&mut tx, user.uid).await?;
+    assert_eq!(user_groups.len(), 1);
+    assert_eq!(user_groups[0].uid, created.uid);
+
+    // Test count_by_owner
+    let count = ExpenseGroupRepo::count_by_owner(&mut tx, user.uid).await?;
+    assert_eq!(count, 1);
+
+    // Test update
+    let new_name = "Updated Expense Group";
+    let updated = ExpenseGroupRepo::update(
+        &mut tx,
+        created.uid,
+        expense_tracker::repos::expense_group::UpdateExpenseGroupDbPayload {
+            name: Some(new_name.into()),
+        },
+    )
+    .await?;
+    assert_eq!(updated.name, new_name);
+    assert_eq!(updated.uid, created.uid);
+
+    // Test list (should include our group)
+    let all_groups = ExpenseGroupRepo::list(&mut tx).await?;
+    assert!(all_groups.len() >= 1);
+    let our_group = all_groups.iter().find(|g| g.uid == created.uid).unwrap();
+    assert_eq!(our_group.name, new_name);
+
+    // Test delete
+    ExpenseGroupRepo::delete(&mut tx, created.uid).await?;
+
+    // Verify it's gone
+    let result = ExpenseGroupRepo::get(&mut tx, created.uid).await;
+    assert!(result.is_err());
+
+    // Verify count is now 0
+    let count_after_delete = ExpenseGroupRepo::count_by_owner(&mut tx, user.uid).await?;
+    assert_eq!(count_after_delete, 0);
+
+    // rollback test data implicitly by dropping tx
+    drop(tx);
+    Ok(())
+}
+
+#[tokio::test]
+async fn expense_group_repo_multiple_owners() -> Result<()> {
+    let Some(pool) = ensure_db_pool().await? else {
+        return Ok(());
+    };
+    let mut tx = pool.begin().await?;
+
+    // Create two test users
+    let user1 = UserRepo::create(
+        &mut tx,
+        CreateUserDbPayload {
+            email: format!("user1+{}@example.com", Uuid::new_v4()),
+            phash: "hash".into(),
+            start_over_date: 1,
+        },
+    )
+    .await?;
+
+    let user2 = UserRepo::create(
+        &mut tx,
+        CreateUserDbPayload {
+            email: format!("user2+{}@example.com", Uuid::new_v4()),
+            phash: "hash".into(),
+            start_over_date: 1,
+        },
+    )
+    .await?;
+
+    // Create groups for each user
+    let group1 = ExpenseGroupRepo::create(
+        &mut tx,
+        CreateExpenseGroupDbPayload {
+            name: "User1 Group".into(),
+            owner: user1.uid,
+        },
+    )
+    .await?;
+
+    let group2 = ExpenseGroupRepo::create(
+        &mut tx,
+        CreateExpenseGroupDbPayload {
+            name: "User2 Group".into(),
+            owner: user2.uid,
+        },
+    )
+    .await?;
+
+    // Test get_all_by_owner returns only the correct groups
+    let user1_groups = ExpenseGroupRepo::get_all_by_owner(&mut tx, user1.uid).await?;
+    assert_eq!(user1_groups.len(), 1);
+    assert_eq!(user1_groups[0].uid, group1.uid);
+
+    let user2_groups = ExpenseGroupRepo::get_all_by_owner(&mut tx, user2.uid).await?;
+    assert_eq!(user2_groups.len(), 1);
+    assert_eq!(user2_groups[0].uid, group2.uid);
+
+    // Test counts
+    let user1_count = ExpenseGroupRepo::count_by_owner(&mut tx, user1.uid).await?;
+    assert_eq!(user1_count, 1);
+
+    let user2_count = ExpenseGroupRepo::count_by_owner(&mut tx, user2.uid).await?;
+    assert_eq!(user2_count, 1);
+
+    // rollback test data implicitly by dropping tx
+    drop(tx);
+    Ok(())
+}

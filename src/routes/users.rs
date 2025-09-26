@@ -46,7 +46,7 @@ pub async fn list_users(State(state): State<AppState>) -> Result<Json<Vec<UserRe
     Ok(Json(res))
 }
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, serde::Serialize, ToSchema)]
 pub struct CreateUserPayload {
     pub email: String,
     pub password: String,
@@ -185,7 +185,7 @@ pub async fn update_user(
     Ok(Json(updated_user))
 }
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, serde::Serialize, ToSchema)]
 pub struct LoginUserPayload {
     pub email: String,
     pub password: String,

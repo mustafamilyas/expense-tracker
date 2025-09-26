@@ -1,12 +1,16 @@
 use anyhow::Result;
+use axum::{body::Body, http::Request};
 use expense_tracker::{
+    app::build_router,
     db::make_db_pool,
     repos::user::{CreateUserDbPayload, UserRepo},
-    routes::users::{CreateUserPayload, UpdateUserPayload},
+    routes::users::{CreateUserPayload, LoginUserPayload, UpdateUserPayload},
     types::AppState,
 };
+use http_body_util::BodyExt;
+use reqwest::StatusCode;
 use sqlx::PgPool;
-use std::error::Error;
+use tower::ServiceExt;
 use uuid::Uuid;
 
 async fn setup_test_db() -> Result<PgPool> {
@@ -36,7 +40,8 @@ async fn test_create_user_success() -> Result<()> {
             phash: "test-hash".to_string(),
             start_over_date: 1,
         },
-    ).await;
+    )
+    .await;
 
     if let Err(ref e) = repo_result {
         println!("Repo Error: {:?}", e);
@@ -63,7 +68,8 @@ async fn test_create_user_success() -> Result<()> {
     let result = expense_tracker::routes::users::create_user(
         axum::extract::State(app_state),
         axum::Json(payload),
-    ).await;
+    )
+    .await;
     assert!(result.is_ok());
     let user = result.unwrap();
     assert_eq!(user.start_over_date, 1);
@@ -101,14 +107,16 @@ async fn test_create_user_duplicate_email() -> Result<()> {
     let result1 = expense_tracker::routes::users::create_user(
         axum::extract::State(app_state.clone()),
         axum::Json(payload1),
-    ).await;
+    )
+    .await;
     assert!(result1.is_ok());
 
     // Try to create user with same email - should fail
     let result2 = expense_tracker::routes::users::create_user(
         axum::extract::State(app_state),
         axum::Json(payload2),
-    ).await;
+    )
+    .await;
     assert!(result2.is_err());
 
     Ok(())
@@ -129,7 +137,8 @@ async fn test_list_users() -> Result<()> {
             phash: "hash1".to_string(),
             start_over_date: 1,
         },
-    ).await?;
+    )
+    .await?;
     UserRepo::create(
         &mut tx,
         CreateUserDbPayload {
@@ -137,7 +146,8 @@ async fn test_list_users() -> Result<()> {
             phash: "hash2".to_string(),
             start_over_date: 2,
         },
-    ).await?;
+    )
+    .await?;
     tx.commit().await?;
 
     let app_state = AppState {
@@ -175,7 +185,8 @@ async fn test_update_user_success() -> Result<()> {
             phash: "oldhash".to_string(),
             start_over_date: 1,
         },
-    ).await?;
+    )
+    .await?;
     tx.commit().await?;
 
     let new_email = format!("updated-{}.example.com", Uuid::new_v4());
@@ -197,7 +208,8 @@ async fn test_update_user_success() -> Result<()> {
         axum::extract::State(app_state),
         axum::extract::Path(user.uid),
         axum::Json(payload),
-    ).await;
+    )
+    .await;
     assert!(result.is_ok());
     let updated_user = result.unwrap();
     assert_eq!(updated_user.email, new_email);
@@ -229,9 +241,99 @@ async fn test_update_user_not_found() -> Result<()> {
         axum::extract::State(app_state),
         axum::extract::Path(fake_uid),
         axum::Json(payload),
-    ).await;
+    )
+    .await;
 
     assert!(result.is_err());
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_login_user_http() -> Result<()> {
+    let pool = setup_test_db().await?;
+
+    // Create a test user first
+    let email = format!("login-test-{}.example.com", Uuid::new_v4());
+    let password = "testpassword123";
+
+    let create_payload = CreateUserPayload {
+        email: email.clone(),
+        password: password.to_string(),
+        start_over_date: 1,
+    };
+
+    let app_state = AppState {
+        version: "test".to_string(),
+        db_pool: pool.clone(),
+        jwt_secret: "test-jwt-secret".to_string(),
+        chat_relay_secret: "test-secret".to_string(),
+        messenger_manager: None,
+    };
+
+    // Create user via HTTP
+    let app = build_router(app_state.clone());
+    let request = Request::builder()
+        .method("POST")
+        .uri("/auth/register")
+        .header("content-type", "application/json")
+        .body(Body::from(serde_json::to_string(&create_payload).unwrap()))?;
+
+    let response = app.oneshot(request).await?;
+    assert_eq!(response.status(), StatusCode::OK);
+
+    // Now test login via HTTP
+    let login_payload = LoginUserPayload {
+        email: email.clone(),
+        password: password.to_string(),
+    };
+
+    let app = build_router(app_state);
+    let request = Request::builder()
+        .method("POST")
+        .uri("/auth/login")
+        .header("content-type", "application/json")
+        .body(Body::from(serde_json::to_string(&login_payload).unwrap()))?;
+
+    let response = app.oneshot(request).await?;
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = response.into_body().collect().await?.to_bytes();
+    let login_response: serde_json::Value = serde_json::from_slice(&body)?;
+
+    assert!(login_response.get("token").is_some());
+    assert!(login_response.get("user").is_some());
+    assert_eq!(login_response["user"]["email"], email);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_login_user_invalid_credentials() -> Result<()> {
+    let pool = setup_test_db().await?;
+
+    let app_state = AppState {
+        version: "test".to_string(),
+        db_pool: pool.clone(),
+        jwt_secret: "test-jwt-secret".to_string(),
+        chat_relay_secret: "test-secret".to_string(),
+        messenger_manager: None,
+    };
+
+    let login_payload = LoginUserPayload {
+        email: "nonexistent@example.com".to_string(),
+        password: "wrongpassword".to_string(),
+    };
+
+    let app = build_router(app_state);
+    let request = Request::builder()
+        .method("POST")
+        .uri("/auth/login")
+        .header("content-type", "application/json")
+        .body(Body::from(serde_json::to_string(&login_payload).unwrap()))?;
+
+    let response = app.oneshot(request).await?;
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 
     Ok(())
 }

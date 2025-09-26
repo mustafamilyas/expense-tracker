@@ -21,7 +21,7 @@ use crate::{repos as repo, routes, types};
         routes::expense_groups::get,
         routes::expense_groups::create,
         routes::expense_groups::update,
-        routes::expense_groups::delete_,
+        // routes::expense_groups::delete_,
 
         routes::categories::list,
         routes::categories::get,

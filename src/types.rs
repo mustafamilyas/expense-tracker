@@ -47,7 +47,7 @@ impl SubscriptionTier {
                 custom_categories: false,
             },
             SubscriptionTier::Personal => TierLimits {
-                max_groups: 1,
+                max_groups: 2,
                 max_members_per_group: 2,
                 max_categories_per_group: 20,
                 max_budgets_per_group: 10,
@@ -83,12 +83,12 @@ impl SubscriptionTier {
                 custom_categories: true,
             },
             SubscriptionTier::Enterprise => TierLimits {
-                max_groups: -1, // Unlimited
-                max_members_per_group: -1, // Unlimited
+                max_groups: -1,               // Unlimited
+                max_members_per_group: -1,    // Unlimited
                 max_categories_per_group: -1, // Unlimited
-                max_budgets_per_group: -1, // Unlimited
-                max_expenses_per_month: -1, // Unlimited
-                data_retention_days: 2555, // ~7 years
+                max_budgets_per_group: -1,    // Unlimited
+                max_expenses_per_month: -1,   // Unlimited
+                data_retention_days: 2555,    // ~7 years
                 advanced_reports: true,
                 export_data: true,
                 priority_support: true,
@@ -172,11 +172,27 @@ pub enum TierError {
 impl std::fmt::Display for TierError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TierError::LimitExceeded { current, limit, resource_type } => {
-                write!(f, "Limit exceeded for {}: {}/{}", resource_type, current, limit)
+            TierError::LimitExceeded {
+                current,
+                limit,
+                resource_type,
+            } => {
+                write!(
+                    f,
+                    "Limit exceeded for {}: {}/{}",
+                    resource_type, current, limit
+                )
             }
-            TierError::InsufficientTier { required_tier, current_tier } => {
-                write!(f, "Feature requires {} tier, you have {}", required_tier.display_name(), current_tier.display_name())
+            TierError::InsufficientTier {
+                required_tier,
+                current_tier,
+            } => {
+                write!(
+                    f,
+                    "Feature requires {} tier, you have {}",
+                    required_tier.display_name(),
+                    current_tier.display_name()
+                )
             }
             TierError::SubscriptionExpired => {
                 write!(f, "Subscription has expired")
@@ -188,8 +204,8 @@ impl std::fmt::Display for TierError {
 impl std::error::Error for TierError {}
 
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
 use std::sync::Arc;
+use utoipa::ToSchema;
 
 use crate::messengers::MessengerManager;
 

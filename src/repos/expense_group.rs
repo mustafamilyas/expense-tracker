@@ -20,7 +20,7 @@ pub struct CreateExpenseGroupDbPayload {
     pub owner: Uuid,
 }
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, serde::Serialize, ToSchema)]
 pub struct UpdateExpenseGroupDbPayload {
     pub name: Option<String>,
 }
