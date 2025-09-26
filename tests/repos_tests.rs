@@ -135,6 +135,112 @@ async fn category_repo_crud_smoke() -> Result<()> {
 }
 
 #[tokio::test]
+async fn category_repo_list_and_count() -> Result<()> {
+    let Some(pool) = ensure_db_pool().await? else {
+        return Ok(());
+    };
+    let mut tx = pool.begin().await?;
+
+    // prerequisites: user and groups
+    let owner = UserRepo::create(
+        &mut tx,
+        CreateUserDbPayload {
+            email: format!("owner+{}@example.com", Uuid::new_v4()),
+            phash: "hash".into(),
+            start_over_date: 1,
+        },
+    )
+    .await?;
+    let group1 = ExpenseGroupRepo::create(
+        &mut tx,
+        CreateExpenseGroupDbPayload {
+            name: "Test Group 1".into(),
+            owner: owner.uid,
+        },
+    )
+    .await?;
+    let group2 = ExpenseGroupRepo::create(
+        &mut tx,
+        CreateExpenseGroupDbPayload {
+            name: "Test Group 2".into(),
+            owner: owner.uid,
+        },
+    )
+    .await?;
+
+    // Create categories in different groups
+    let category1 = CategoryRepo::create(
+        &mut tx,
+        CreateCategoryDbPayload {
+            group_uid: group1.uid,
+            name: "Groceries".into(),
+            description: Some("food".into()),
+        },
+    )
+    .await?;
+    let category2 = CategoryRepo::create(
+        &mut tx,
+        CreateCategoryDbPayload {
+            group_uid: group1.uid,
+            name: "Transport".into(),
+            description: None,
+        },
+    )
+    .await?;
+    let category3 = CategoryRepo::create(
+        &mut tx,
+        CreateCategoryDbPayload {
+            group_uid: group2.uid,
+            name: "Entertainment".into(),
+            description: Some("fun".into()),
+        },
+    )
+    .await?;
+
+    // Test list (should return all categories)
+    let all_categories = CategoryRepo::list(&mut tx).await?;
+    assert!(all_categories.len() >= 3);
+    let our_categories: Vec<_> = all_categories.into_iter()
+        .filter(|c| c.uid == category1.uid || c.uid == category2.uid || c.uid == category3.uid)
+        .collect();
+    assert_eq!(our_categories.len(), 3);
+
+    // Test list_by_group for group1
+    let group1_categories = CategoryRepo::list_by_group(&mut tx, group1.uid).await?;
+    assert_eq!(group1_categories.len(), 2);
+    assert!(group1_categories.iter().any(|c| c.uid == category1.uid));
+    assert!(group1_categories.iter().any(|c| c.uid == category2.uid));
+
+    // Test list_by_group for group2
+    let group2_categories = CategoryRepo::list_by_group(&mut tx, group2.uid).await?;
+    assert_eq!(group2_categories.len(), 1);
+    assert_eq!(group2_categories[0].uid, category3.uid);
+
+    // Test count_by_group
+    let group1_count = CategoryRepo::count_by_group(&mut tx, group1.uid).await?;
+    assert_eq!(group1_count, 2);
+
+    let group2_count = CategoryRepo::count_by_group(&mut tx, group2.uid).await?;
+    assert_eq!(group2_count, 1);
+
+    // Test count_by_group for empty group
+    let empty_group = ExpenseGroupRepo::create(
+        &mut tx,
+        CreateExpenseGroupDbPayload {
+            name: "Empty Group".into(),
+            owner: owner.uid,
+        },
+    )
+    .await?;
+    let empty_count = CategoryRepo::count_by_group(&mut tx, empty_group.uid).await?;
+    assert_eq!(empty_count, 0);
+
+    // rollback test data implicitly by dropping tx
+    drop(tx);
+    Ok(())
+}
+
+#[tokio::test]
 async fn tier_limits_enforcement_test() -> Result<()> {
     let Some(pool) = ensure_db_pool().await? else {
         return Ok(());

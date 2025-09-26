@@ -2,7 +2,7 @@ use axum::{
     Json,
     extract::{Extension, Path, State},
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -62,7 +62,7 @@ pub async fn get(
     Ok(Json(res))
 }
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct CreateCategoryPayload {
     pub group_uid: Uuid,
     pub name: String,
@@ -107,7 +107,7 @@ pub async fn create(
     Ok(Json(created))
 }
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct UpdateCategoryPayload {
     pub name: Option<String>,
     pub description: Option<String>,
@@ -138,6 +138,7 @@ pub async fn update(
     Ok(Json(updated))
 }
 
+// TODO: Not to be used until we implement cascading deletes
 #[utoipa::path(delete, path = "/categories/{uid}", params(("uid" = Uuid, Path)), responses((status = 200, description = "Deleted")), tag = "Categories", operation_id = "deleteCategory", security(("bearerAuth" = [])))]
 pub async fn delete_(
     State(state): State<AppState>,

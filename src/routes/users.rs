@@ -10,6 +10,7 @@ use axum::{
 use serde::Deserialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
+use validator::Validate;
 
 use crate::{
     auth::AuthContext, error::AppError, repos::{
@@ -46,10 +47,13 @@ pub async fn list_users(State(state): State<AppState>) -> Result<Json<Vec<UserRe
     Ok(Json(res))
 }
 
-#[derive(Debug, Deserialize, serde::Serialize, ToSchema)]
+#[derive(Debug, Deserialize, serde::Serialize, ToSchema, Validate)]
 pub struct CreateUserPayload {
+    #[validate(email)]
     pub email: String,
+    #[validate(length(min = 8))]
     pub password: String,
+    #[validate(range(min = 1, max = 28))]
     pub start_over_date: i16,
 }
 
@@ -58,6 +62,7 @@ pub async fn create_user(
     State(state): State<AppState>,
     Json(payload): Json<CreateUserPayload>,
 ) -> Result<Json<UserRead>, AppError> {
+    payload.validate().map_err(|e| AppError::BadRequest(format!("Invalid input: {}", e)))?;
     let salt = SaltString::generate(&mut OsRng);
     let phash = argon2::Argon2::default()
         .hash_password(payload.password.as_bytes(), &salt)
@@ -145,10 +150,13 @@ pub async fn get_me(
 }
 
 // TODO: restrict to admin users or the user themselves
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct UpdateUserPayload {
+    #[validate(email)]
     pub email: Option<String>,
+    #[validate(length(min = 8))]
     pub password: Option<String>,
+    #[validate(range(min = 1, max = 28))]
     pub start_over_date: Option<i16>,
 }
 
@@ -158,6 +166,7 @@ pub async fn update_user(
     Path(uid): Path<Uuid>,
     Json(payload): Json<UpdateUserPayload>,
 ) -> Result<Json<UserRead>, AppError> {
+    payload.validate().map_err(|e| AppError::BadRequest(format!("Invalid input: {}", e)))?;
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for updating user"))?;
     let new_phash = match &payload.password {
         Some(pw) => {

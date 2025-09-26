@@ -120,7 +120,7 @@ impl SubscriptionRepo {
             .bind(user_uid)
             .fetch_one(tx.as_mut())
             .await
-            .map_err(|e| DatabaseError::from_sqlx_error(e, "getting subscription by user"))?;
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "No active subscription found."))?;
 
         Ok(row)
     }
