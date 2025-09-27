@@ -7,7 +7,7 @@ use argon2::{
 };
 use chrono::{DateTime, Utc};
 use expense_tracker::types::SubscriptionTier;
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use sqlx::PgPool;
 use std::time::Duration;
 use uuid::Uuid;
@@ -35,6 +35,8 @@ struct SeedCategory {
     name: String,
     #[serde(default)]
     description: Option<String>,
+    #[serde(default)]
+    alias: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -234,44 +236,18 @@ async fn seed_categories(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
     for c in cats {
         let uid = c.uid.unwrap_or_else(Uuid::new_v4);
         sqlx::query(
-            r#"INSERT INTO categories (uid, group_uid, name, description)
-               VALUES ($1, $2, $3, $4)
+            r#"INSERT INTO categories (uid, group_uid, name, description, alias)
+               VALUES ($1, $2, $3, $4, $5)
                ON CONFLICT DO NOTHING"#,
         )
         .bind(uid)
         .bind(c.group_uid)
         .bind(&c.name)
         .bind(&c.description)
+        .bind(&c.alias)
         .execute(pool)
         .await
         .with_context(|| format!("inserting category {}", c.name))?;
-    }
-    Ok(())
-}
-
-async fn seed_category_aliases(pool: &PgPool, seeds_dir: &Path) -> Result<()> {
-    let path = seeds_dir.join("categories_aliases.json");
-    if !path.exists() {
-        return Ok(());
-    }
-    let data = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let aliases: Vec<SeedCategoryAlias> =
-        serde_json::from_str(&data).with_context(|| format!("parsing {}", path.display()))?;
-
-    for a in aliases {
-        let alias_uid = a.alias_uid.unwrap_or_else(Uuid::new_v4);
-        sqlx::query(
-            r#"INSERT INTO categories_aliases (alias_uid, group_uid, alias, category_uid)
-               VALUES ($1, $2, $3, $4)
-               ON CONFLICT DO NOTHING"#,
-        )
-        .bind(alias_uid)
-        .bind(a.group_uid)
-        .bind(&a.alias)
-        .bind(a.category_uid)
-        .execute(pool)
-        .await
-        .with_context(|| format!("inserting category alias {}", a.alias))?;
     }
     Ok(())
 }
@@ -515,8 +491,6 @@ async fn main() -> Result<()> {
     println!("Seeding expense groups complete.");
     seed_categories(&pool, seeds_dir).await?;
     println!("Seeding categories complete.");
-    seed_category_aliases(&pool, seeds_dir).await?;
-    println!("Seeding category aliases complete.");
     seed_expense_entries(&pool, seeds_dir).await?;
     println!("Seeding expense entries complete.");
     seed_budgets(&pool, seeds_dir).await?;

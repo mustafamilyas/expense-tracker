@@ -29,11 +29,6 @@ use crate::{repos as repo, routes, types};
         routes::categories::update,
         // routes::categories::delete_,
 
-        routes::categories_aliases::list,
-        routes::categories_aliases::create,
-        routes::categories_aliases::update,
-        routes::categories_aliases::delete_,
-
         routes::budgets::list,
         routes::budgets::get,
         routes::budgets::create,
@@ -59,7 +54,6 @@ use crate::{repos as repo, routes, types};
         repo::user::UserRead,
         repo::expense_group::ExpenseGroup,
         repo::category::Category,
-        repo::category_alias::CategoryAlias,
         repo::expense_entry::ExpenseEntry,
         repo::expense_group::UpdateExpenseGroupDbPayload,
         repo::budget::Budget,
@@ -76,8 +70,6 @@ use crate::{repos as repo, routes, types};
         
         routes::categories::CreateCategoryPayload,
         routes::categories::UpdateCategoryPayload,
-        routes::categories_aliases::CreateCategoryAliasPayload,
-        routes::categories_aliases::UpdateCategoryAliasPayload,
         routes::budgets::CreateBudgetPayload,
         routes::budgets::UpdateBudgetPayload,
         routes::chat_bind_requests::CreateChatBindRequestPayload,
@@ -94,7 +86,6 @@ use crate::{repos as repo, routes, types};
         (name = "Expense Entries"),
         (name = "Expense Groups"),
         (name = "Categories"),
-        (name = "Category Aliases"),
         (name = "Budgets"),
         (name = "Chat Bind Requests"),
         (name = "Chat Bindings"),

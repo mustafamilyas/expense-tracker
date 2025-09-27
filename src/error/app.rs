@@ -95,3 +95,9 @@ impl From<crate::types::TierError> for AppError {
         }
     }
 }
+
+impl From<validator::ValidationErrors> for AppError {
+    fn from(err: validator::ValidationErrors) -> Self {
+        AppError::BadRequest(format!("Validation error: {}", err))
+    }
+}

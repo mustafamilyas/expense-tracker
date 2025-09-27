@@ -10,7 +10,6 @@ use crate::reports::MonthlyReportGenerator;
 use crate::repos::{
     budget::{BudgetRepo, CreateBudgetDbPayload},
     category::{CategoryRepo, CreateCategoryDbPayload},
-    category_alias::{CategoryAliasRepo, CreateCategoryAliasDbPayload},
     chat_bind_request::{ChatBindRequestRepo, CreateChatBindRequestDbPayload},
     chat_binding::ChatBindingRepo,
     expense_entry::{CreateExpenseEntryDbPayload, ExpenseEntryRepo},
@@ -206,6 +205,7 @@ impl TelegramMessenger {
                         group_uid: binding.group_uid,
                         name: cat_name,
                         description: None,
+                        alias: None,
                     },
                 )
                 .await?;
@@ -224,6 +224,7 @@ impl TelegramMessenger {
                         group_uid: binding.group_uid,
                         name: "General".to_string(),
                         description: Some("Default category".to_string()),
+                        alias: None,
                     },
                 )
                 .await?;
@@ -489,12 +490,10 @@ impl TelegramMessenger {
         for category in categories {
             response.push_str(&format!("📁 {}\n", category.name));
 
-            // Get aliases for this category
-            let aliases = CategoryAliasRepo::list_by_category(tx, category.uid).await?;
-            if !aliases.is_empty() {
-                response.push_str("   Aliases: ");
-                let alias_names: Vec<String> = aliases.iter().map(|a| a.alias.clone()).collect();
-                response.push_str(&alias_names.join(", "));
+            // Check if category has an alias
+            if let Some(alias) = &category.alias {
+                response.push_str("   Alias: ");
+                response.push_str(alias);
                 response.push_str("\n");
             }
             response.push_str("\n");
@@ -549,6 +548,7 @@ impl TelegramMessenger {
                 group_uid: binding.group_uid,
                 name: category_name.clone(),
                 description: None,
+                alias: None,
             },
         )
         .await?;
@@ -615,6 +615,7 @@ impl TelegramMessenger {
                     crate::repos::category::UpdateCategoryDbPayload {
                         name: Some(new_name.clone()),
                         description: None,
+                        alias: None,
                     },
                 )
                 .await?;
@@ -666,34 +667,31 @@ impl TelegramMessenger {
 
         match category {
             Some(cat) => {
-                // Check if alias already exists
-                let existing_aliases = CategoryAliasRepo::list_by_category(tx, cat.uid).await?;
-                if existing_aliases
-                    .iter()
-                    .any(|a| a.alias.to_lowercase() == alias.to_lowercase())
-                {
+                // Check if category already has this alias
+                if cat.alias.as_ref().map(|a| a.to_lowercase()) == Some(alias.to_lowercase()) {
                     let response = format!(
-                        "Alias '{}' already exists for category '{}'.",
+                        "Alias '{}' is already set for category '{}'.",
                         alias, cat.name
                     );
                     self.bot.send_message(chat_id, response).await?;
                     return Ok(());
                 }
 
-                // Create new alias
-                let new_alias = CategoryAliasRepo::create(
+                // Update category with new alias
+                CategoryRepo::update(
                     tx,
-                    CreateCategoryAliasDbPayload {
-                        group_uid: binding.group_uid,
-                        alias: alias.clone(),
-                        category_uid: cat.uid,
+                    cat.uid,
+                    crate::repos::category::UpdateCategoryDbPayload {
+                        name: None,
+                        description: None,
+                        alias: Some(alias.clone()),
                     },
                 )
                 .await?;
 
                 let response = format!(
                     "✅ Alias '{}' added for category '{}'!",
-                    new_alias.alias, cat.name
+                    alias, cat.name
                 );
                 self.bot.send_message(chat_id, response).await?;
             }
@@ -1249,6 +1247,7 @@ impl TelegramMessenger {
                             group_uid: binding.group_uid,
                             name: category_name,
                             description: None,
+                            alias: None,
                         },
                     )
                     .await?;
@@ -1267,6 +1266,7 @@ impl TelegramMessenger {
                             group_uid: binding.group_uid,
                             name: "General".to_string(),
                             description: Some("Default category".to_string()),
+                            alias: None,
                         },
                     )
                     .await?;

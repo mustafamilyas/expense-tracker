@@ -105,6 +105,7 @@ async fn category_repo_crud_smoke() -> Result<()> {
             group_uid: group.uid,
             name: "Groceries".into(),
             description: Some("food".into()),
+            alias: None,
         },
     )
     .await?;
@@ -121,6 +122,7 @@ async fn category_repo_crud_smoke() -> Result<()> {
         UpdateCategoryDbPayload {
             name: Some("Supermarket".into()),
             description: None,
+            alias: None,
         },
     )
     .await?;
@@ -175,6 +177,7 @@ async fn category_repo_list_and_count() -> Result<()> {
             group_uid: group1.uid,
             name: "Groceries".into(),
             description: Some("food".into()),
+            alias: None,
         },
     )
     .await?;
@@ -184,6 +187,7 @@ async fn category_repo_list_and_count() -> Result<()> {
             group_uid: group1.uid,
             name: "Transport".into(),
             description: None,
+            alias: None,
         },
     )
     .await?;
@@ -193,6 +197,7 @@ async fn category_repo_list_and_count() -> Result<()> {
             group_uid: group2.uid,
             name: "Entertainment".into(),
             description: Some("fun".into()),
+            alias: None,
         },
     )
     .await?;
@@ -292,6 +297,7 @@ async fn tier_limits_enforcement_test() -> Result<()> {
                 group_uid: group1.uid,
                 name: format!("Category {}", i),
                 description: None,
+                alias: None,
             },
         )
         .await?;
@@ -305,6 +311,7 @@ async fn tier_limits_enforcement_test() -> Result<()> {
             group_uid: group1.uid,
             name: "Budget Test Category".into(),
             description: None,
+            alias: None,
         },
     )
     .await?;

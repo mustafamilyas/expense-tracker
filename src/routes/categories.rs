@@ -5,6 +5,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
+use validator::Validate;
 
 use crate::{
     auth::{group_guard::group_guard, AuthContext},
@@ -62,11 +63,15 @@ pub async fn get(
     Ok(Json(res))
 }
 
-#[derive(Deserialize, Serialize, ToSchema)]
+#[derive(Deserialize, Serialize, ToSchema, Validate)]
 pub struct CreateCategoryPayload {
     pub group_uid: Uuid,
+    #[validate(length(min = 1, max = 100))]
     pub name: String,
+    #[validate(length(max = 255))]
     pub description: Option<String>,
+    #[validate(length(min = 1, max = 100))]
+    pub alias: Option<String>,
 }
 
 #[utoipa::path(
@@ -83,6 +88,7 @@ pub async fn create(
     Extension(auth): Extension<AuthContext>,
     Json(payload): Json<CreateCategoryPayload>,
 ) -> Result<Json<Category>, AppError> {
+    payload.validate()?;
     group_guard(&auth, payload.group_uid, &state.db_pool).await?;
 
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for creating category"))?;
@@ -100,6 +106,7 @@ pub async fn create(
             group_uid: payload.group_uid,
             name: payload.name,
             description: payload.description,
+            alias: payload.alias,
         },
     )
     .await?;
@@ -107,10 +114,14 @@ pub async fn create(
     Ok(Json(created))
 }
 
-#[derive(Deserialize, Serialize, ToSchema)]
+#[derive(Deserialize, Serialize, ToSchema, Validate)]
 pub struct UpdateCategoryPayload {
+    #[validate(length(min = 1, max = 100))]
     pub name: Option<String>,
+    #[validate(length(max = 255))]
     pub description: Option<String>,
+    #[validate(length(min = 1, max = 100))]
+    pub alias: Option<String>,
 }
 
 #[utoipa::path(put, path = "/categories/{uid}", params(("uid" = Uuid, Path)), request_body = UpdateCategoryPayload, responses((status = 200, body = Category)), tag = "Categories", operation_id = "updateCategory", security(("bearerAuth" = [])))]
@@ -120,6 +131,7 @@ pub async fn update(
     Path(uid): Path<Uuid>,
     Json(payload): Json<UpdateCategoryPayload>,
 ) -> Result<Json<Category>, AppError> {
+    payload.validate()?;
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for updating category"))?;
     let prev_category = CategoryRepo::get(&mut tx, uid).await?;
 
@@ -131,6 +143,7 @@ pub async fn update(
         UpdateCategoryDbPayload {
             name: payload.name,
             description: payload.description,
+            alias: payload.alias,
         },
     )
     .await?;

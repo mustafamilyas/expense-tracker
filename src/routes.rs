@@ -4,7 +4,6 @@ pub mod health;
 pub mod version;
 pub mod expense_groups;
 pub mod categories;
-pub mod categories_aliases;
 pub mod budgets;
 pub mod chat_bind_requests;
 pub mod chat_bindings;

@@ -15,7 +15,6 @@ pub fn build_router(app_state: AppState) -> Router {
         .route("/version", get(routes::version::version))
         .merge(routes::chat_bindings::router())
         .merge(routes::expense_entry::router())
-        .merge(routes::categories_aliases::router())
         .merge(routes::budgets::router())
         .merge(routes::categories::router())
         .merge(routes::users::router())

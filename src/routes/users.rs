@@ -62,7 +62,7 @@ pub async fn create_user(
     State(state): State<AppState>,
     Json(payload): Json<CreateUserPayload>,
 ) -> Result<Json<UserRead>, AppError> {
-    payload.validate().map_err(|e| AppError::BadRequest(format!("Invalid input: {}", e)))?;
+    payload.validate()?;
     let salt = SaltString::generate(&mut OsRng);
     let phash = argon2::Argon2::default()
         .hash_password(payload.password.as_bytes(), &salt)
@@ -166,7 +166,7 @@ pub async fn update_user(
     Path(uid): Path<Uuid>,
     Json(payload): Json<UpdateUserPayload>,
 ) -> Result<Json<UserRead>, AppError> {
-    payload.validate().map_err(|e| AppError::BadRequest(format!("Invalid input: {}", e)))?;
+    payload.validate()?;
     let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for updating user"))?;
     let new_phash = match &payload.password {
         Some(pw) => {

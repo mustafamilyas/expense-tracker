@@ -96,6 +96,7 @@ async fn test_list_categories() -> Result<()> {
             group_uid,
             name: "Groceries".to_string(),
             description: Some("Food shopping".to_string()),
+            alias: None,
         },
     )
     .await?;
@@ -105,6 +106,7 @@ async fn test_list_categories() -> Result<()> {
             group_uid,
             name: "Transport".to_string(),
             description: None,
+            alias: None,
         },
     )
     .await?;
@@ -156,6 +158,7 @@ async fn test_get_category() -> Result<()> {
             group_uid,
             name: "Test Category".to_string(),
             description: Some("Test description".to_string()),
+            alias: None,
         },
     )
     .await?;
@@ -227,6 +230,7 @@ async fn test_create_category() -> Result<()> {
         group_uid,
         name: "New Category".to_string(),
         description: Some("New category description".to_string()),
+        alias: None,
     };
 
     let app_state = AppState {
@@ -273,6 +277,7 @@ async fn test_update_category() -> Result<()> {
             group_uid,
             name: "Original Name".to_string(),
             description: Some("Original description".to_string()),
+            alias: None,
         },
     )
     .await?;
@@ -281,6 +286,7 @@ async fn test_update_category() -> Result<()> {
     let update_payload = UpdateCategoryPayload {
         name: Some("Updated Name".to_string()),
         description: Some("Updated description".to_string()),
+        alias: None,
     };
 
     let app_state = AppState {

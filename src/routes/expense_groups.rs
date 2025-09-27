@@ -22,7 +22,7 @@ pub fn router() -> axum::Router<AppState> {
         .route("/expense-groups", axum::routing::get(list).post(create))
         .route(
             "/expense-groups/{uid}",
-            axum::routing::get(get).put(update),
+            axum::routing::get(get).put(update).delete(delete_),
         )
 }
 
