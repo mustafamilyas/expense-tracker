@@ -9,12 +9,12 @@ use axum::middleware;
 pub fn build_router(app_state: AppState) -> Router {
     let auth_state = app_state.clone();
     Router::new()
-        // .nest("/chat-bind-requests", routes::chat_bind_requests::router())
         // .merge("/group-members", routes::group_members::router())
         .route("/health", get(routes::health::health))
         .route("/version", get(routes::version::version))
         .merge(routes::chat_bindings::router())
         .merge(routes::expense_entry::router())
+        .merge(routes::chat_bind_requests::router())
         .merge(routes::budgets::router())
         .merge(routes::categories::router())
         .merge(routes::users::router())

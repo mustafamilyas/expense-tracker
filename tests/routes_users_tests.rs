@@ -29,7 +29,7 @@ async fn setup_test_db() -> Result<PgPool> {
 async fn test_create_user_success() -> Result<()> {
     let pool = setup_test_db().await?;
 
-    let email = format!("test-{}.example.com", Uuid::new_v4());
+    let email = format!("test-{}@example.com", Uuid::new_v4());
 
     // Test the repository function directly first
     let mut tx = pool.begin().await?;
@@ -72,8 +72,8 @@ async fn test_create_user_success() -> Result<()> {
     .await;
     assert!(result.is_ok());
     let user = result.unwrap();
-    assert_eq!(user.start_over_date, 1);
-    assert!(!user.uid.is_nil());
+    assert_eq!(user.user.start_over_date, 1);
+    assert!(!user.user.uid.is_nil());
 
     Ok(())
 }
@@ -82,7 +82,7 @@ async fn test_create_user_success() -> Result<()> {
 async fn test_create_user_duplicate_email() -> Result<()> {
     let pool = setup_test_db().await?;
 
-    let email = format!("duplicate-{}.example.com", Uuid::new_v4());
+    let email = format!("duplicate-{}@example.com", Uuid::new_v4());
     let payload1 = CreateUserPayload {
         email: email.clone(),
         password: "password123".to_string(),
@@ -177,7 +177,7 @@ async fn test_update_user_success() -> Result<()> {
 
     // Create a test user
     let mut tx = pool.begin().await?;
-    let email = format!("update-test-{}.example.com", Uuid::new_v4());
+    let email = format!("update-test-{}@example.com", Uuid::new_v4());
     let user = UserRepo::create(
         &mut tx,
         CreateUserDbPayload {
@@ -189,7 +189,7 @@ async fn test_update_user_success() -> Result<()> {
     .await?;
     tx.commit().await?;
 
-    let new_email = format!("updated-{}.example.com", Uuid::new_v4());
+    let new_email = format!("updated-{}@example.com", Uuid::new_v4());
     let payload = UpdateUserPayload {
         email: Some(new_email.clone()),
         password: None,
@@ -254,7 +254,7 @@ async fn test_login_user_http() -> Result<()> {
     let pool = setup_test_db().await?;
 
     // Create a test user first
-    let email = format!("login-test-{}.example.com", Uuid::new_v4());
+    let email = format!("login-test-{}@example.com", Uuid::new_v4());
     let password = "testpassword123";
 
     let create_payload = CreateUserPayload {

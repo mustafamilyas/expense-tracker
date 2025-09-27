@@ -1,6 +1,9 @@
-use axum::{Json, extract::State};
+use axum::{
+    Extension, Json,
+    extract::{Path, State},
+};
 use serde::Deserialize;
-use utoipa::ToSchema;
+use utoipa::{ ToSchema};
 use uuid::Uuid;
 
 use crate::{
@@ -12,7 +15,9 @@ use crate::{
 };
 
 pub fn router() -> axum::Router<AppState> {
-    axum::Router::new().route("/chat-bind-requests", axum::routing::post(create))
+    axum::Router::new()
+        .route("/chat-bind-requests", axum::routing::post(create))
+        .route("/chat-bind-requests/{id}", axum::routing::get(get))
 }
 
 #[derive(Deserialize, ToSchema)]
@@ -29,7 +34,9 @@ pub async fn create(
     State(state): State<AppState>,
     Json(payload): Json<CreateChatBindRequestPayload>,
 ) -> Result<Json<ChatBindRequest>, AppError> {
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for creating chat bind request"))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| {
+        AppError::from_sqlx_error(e, "beginning transaction for creating chat bind request")
+    })?;
     let created = ChatBindRequestRepo::create(
         &mut tx,
         CreateChatBindRequestDbPayload {
@@ -41,6 +48,29 @@ pub async fn create(
         },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for creating chat bind request"))?;
+    tx.commit().await.map_err(|e| {
+        AppError::from_sqlx_error(e, "committing transaction for creating chat bind request")
+    })?;
     Ok(Json(created))
+}
+
+#[utoipa::path(
+    get, 
+    path = "/chat-bind-requests/{uid}", 
+    responses((status = 200, body = ChatBindRequest)), 
+    params(("uid" = Uuid, Path, description = "The UUID of the chat bind request to retrieve")),
+    tag = "Chat Bind Requests", operation_id = "getChatBindRequest", security(("bearerAuth" = [])))]
+pub async fn get(
+    State(state): State<AppState>,
+    Path(uid): Path<Uuid>,
+) -> Result<Json<ChatBindRequest>, AppError> {
+    // TODO: restrict security
+    let mut tx = state.db_pool.begin().await.map_err(|e| {
+        AppError::from_sqlx_error(e, "beginning transaction for getting chat bind request")
+    })?;
+    let res = ChatBindRequestRepo::get(&mut tx, uid).await?;
+    tx.commit().await.map_err(|e| {
+        AppError::from_sqlx_error(e, "committing transaction for getting chat bind request")
+    })?;
+    Ok(Json(res))
 }

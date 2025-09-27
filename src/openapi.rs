@@ -36,6 +36,7 @@ use crate::{repos as repo, routes, types};
         routes::budgets::delete_,
 
         routes::chat_bind_requests::create,
+        routes::chat_bind_requests::get,
 
         routes::chat_bindings::accept,
 

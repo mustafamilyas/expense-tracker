@@ -2,9 +2,12 @@ use async_trait::async_trait;
 use chrono::{Datelike, Duration, NaiveDate, Utc};
 use sqlx::{PgPool, Row};
 use std::collections::HashMap;
+use teloxide::types::ParseMode;
 use teloxide::{prelude::*, types::Message as TgMessage};
 use uuid::Uuid;
 
+use crate::config::Config;
+use crate::lang::Lang;
 use crate::middleware::tier::check_tier_limit;
 use crate::reports::MonthlyReportGenerator;
 use crate::repos::{
@@ -22,15 +25,19 @@ use crate::types::SubscriptionTier;
 use super::Messenger;
 
 pub struct TelegramMessenger {
+    config: Config,
     bot: Bot,
     db_pool: PgPool,
+    lang: Lang,
 }
 
 impl TelegramMessenger {
-    pub fn new(token: String, db_pool: PgPool) -> Self {
+    pub fn new(config: &Config, db_pool: PgPool) -> Self {
         Self {
-            bot: Bot::new(token),
+            config: config.clone(),
+            bot: Bot::new(config.telegram_bot_token.clone()),
             db_pool,
+            lang: Lang::from_json("id"),
         }
     }
 
@@ -121,14 +128,15 @@ impl TelegramMessenger {
                         )
                         .await?;
 
-                        let bind_url = format!("http://localhost:3001/bind/{}", request.id);
-                        let response = format!(
-                            "Please visit {} to bind this chat to your expense group.",
-                            bind_url
+                        let bind_url = format!("{}/{}", self.config.chat_bind_url, request.id);
+                        let response = self.lang.get_with_vars(
+                            "TELEGRAM__SIGN_IN_REQUEST",
+                            HashMap::from([("link".to_string(), bind_url)]),
                         );
+
                         self.bot.send_message(msg.chat.id, response).await?;
                     } else {
-                        let response = "This chat is not bound to an expense group. Type /sign-in to start the binding process.";
+                        let response = self.lang.get("TELEGRAM__CHAT_NOT_BOUND");
                         self.bot.send_message(msg.chat.id, response).await?;
                     }
                 }
@@ -669,9 +677,12 @@ impl TelegramMessenger {
             Some(cat) => {
                 // Check if category already has this alias
                 if cat.alias.as_ref().map(|a| a.to_lowercase()) == Some(alias.to_lowercase()) {
-                    let response = format!(
-                        "Alias '{}' is already set for category '{}'.",
-                        alias, cat.name
+                    let response = self.lang.get_with_vars(
+                        "TELEGRAM__CATEGORY_ALIAS_EXISTS",
+                        HashMap::from([
+                            ("alias".to_string(), alias.clone()),
+                            ("category".to_string(), cat.name.clone()),
+                        ]),
                     );
                     self.bot.send_message(chat_id, response).await?;
                     return Ok(());
@@ -689,14 +700,20 @@ impl TelegramMessenger {
                 )
                 .await?;
 
-                let response = format!(
-                    "✅ Alias '{}' added for category '{}'!",
-                    alias, cat.name
+                let response = self.lang.get_with_vars(
+                    "TELEGRAM__CATEGORY_ALIAS_ADDED",
+                    HashMap::from([
+                        ("alias".to_string(), alias),
+                        ("category".to_string(), cat.name),
+                    ]),
                 );
                 self.bot.send_message(chat_id, response).await?;
             }
             None => {
-                let response = format!("Category '{}' not found.", category_name);
+                let response = self.lang.get_with_vars(
+                    "TELEGRAM__CATEGORY_NOT_FOUND",
+                    HashMap::from([("category".to_string(), category_name.to_string())]),
+                );
                 self.bot.send_message(chat_id, response).await?;
             }
         }
@@ -1204,7 +1221,7 @@ impl TelegramMessenger {
         // Parse the expense edit command
         let lines: Vec<&str> = text.lines().collect();
         if lines.len() < 3 || lines.len() % 2 != 1 {
-            let response = "Invalid format. Use:\n/expense-edit\n[id]\n[product],[price],[category]\n\nor\n\n/expense-edit\n[id]\n[product]_[price]_[category]";
+            let response = self.lang.get("TELEGRAM__INVALID_EXPENSE_FORMAT");
             self.bot.send_message(chat_id, response).await?;
             return Ok(());
         }
@@ -1221,7 +1238,10 @@ impl TelegramMessenger {
             let expense_uid = match Uuid::parse_str(id_line) {
                 Ok(uid) => uid,
                 Err(_) => {
-                    let response = format!("Invalid expense ID: {}", id_line);
+                    let response = self.lang.get_with_vars(
+                        "TELEGRAM__INVALID_EXPENSE_ID",
+                        HashMap::from([("id".to_string(), id_line.to_string())]),
+                    );
                     self.bot.send_message(chat_id, response).await?;
                     return Ok(());
                 }
@@ -1408,12 +1428,14 @@ impl Messenger for TelegramMessenger {
     async fn start(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let bot = self.bot.clone();
         let db_pool = self.db_pool.clone();
+        let config = self.config.clone();
 
         tokio::spawn(async move {
             let handler = Update::filter_message().endpoint(move |bot: Bot, msg: TgMessage| {
                 let db_pool = db_pool.clone();
+                let config = config.clone();
                 async move {
-                    let messenger = TelegramMessenger::new(bot.token().to_string(), db_pool);
+                    let messenger = TelegramMessenger::new(&config, db_pool);
                     if let Err(e) = messenger.handle_message(msg).await {
                         tracing::error!("Error handling message: {:?}", e);
                     }

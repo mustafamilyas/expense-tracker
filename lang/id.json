@@ -1,0 +1,13 @@
+{
+  "TELEGRAM__NOT_LOGIN": "Hello, anda belum bisa menggunakan {{brand}}. Silakan kirim `/start` untuk mendaftar.",
+  "TELEGRAM__SIGN_IN_REQUEST": "Silahkan klik tautan berikut {{link}} untuk menghubungkan group ini dengan akun Anda.",
+  "TELEGRAM__CHAT_NOT_BOUND": "Chat ini belum terhubung dengan grup expense. Ketik /sign-in untuk memulai proses binding.",
+  "TELEGRAM__INVALID_EXPENSE_FORMAT": "Format tidak valid. Gunakan:\n/expense-edit\n[id]\n[produk],[harga],[kategori]\n\natau\n\n/expense-edit\n[id]\n[produk]_[harga]_[kategori]",
+  "TELEGRAM__INVALID_EXPENSE_ID": "ID expense tidak valid: {{id}}",
+  "TELEGRAM__CATEGORY_ALIAS_ADDED": "Alias '{{alias}}' berhasil ditambahkan untuk kategori '{{category}}'!",
+  "TELEGRAM__CATEGORY_ALIAS_EXISTS": "Alias '{{alias}}' sudah ada untuk kategori '{{category}}'.",
+  "TELEGRAM__CATEGORY_NOT_FOUND": "Kategori '{{category}}' tidak ditemukan.",
+  "TELEGRAM__EXPENSE_UPDATED": "Expense berhasil diupdate!",
+  "TELEGRAM__EXPENSE_ADDED": "Expense berhasil ditambahkan!",
+  "TELEGRAM__COMMAND_LIST": "Daftar perintah yang tersedia:\n\n/expense [produk] [harga] [kategori] - Tambah expense\n/expense-edit - Edit expense\n/report - Lihat laporan\n/history - Lihat history\n/category - Lihat kategori\n/category-add [nama] - Tambah kategori\n/budget - Lihat budget\n/subscription - Lihat subscription"
+}
