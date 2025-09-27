@@ -61,7 +61,7 @@ pub struct CreateUserPayload {
 pub async fn create_user(
     State(state): State<AppState>,
     Json(payload): Json<CreateUserPayload>,
-) -> Result<Json<UserRead>, AppError> {
+) -> Result<Json<LoginResponse>, AppError> {
     payload.validate()?;
     let salt = SaltString::generate(&mut OsRng);
     let phash = argon2::Argon2::default()
@@ -120,10 +120,16 @@ pub async fn create_user(
 
     tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for creating user"))?;
 
-    Ok(Json(UserRead {
-        uid: user.uid,
-        email: payload.email.clone(),
-        start_over_date: payload.start_over_date,
+    // Issue JWT for web clients
+    let token = crate::auth::encode_web_jwt(user.uid, &state.jwt_secret, 60 * 60 * 24 * 7)
+        .map_err(AppError::Internal)?;
+    Ok(Json(LoginResponse {
+        token,
+        user: UserRead {
+            uid: user.uid,
+            email: user.email,  
+            start_over_date: user.start_over_date,
+        },
     }))
 }
 
