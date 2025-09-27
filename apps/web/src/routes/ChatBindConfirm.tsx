@@ -8,7 +8,6 @@ export default function ChatBindConfirm() {
   const [req] = createResource<ChatBindRequest>(() =>
     api.getChatBindRequest(params.id)
   );
-  console.log("Request:", req());
   const [groups] = createResource(api.listGroups);
   const [groupUid, setGroupUid] = createSignal<string>("");
   const [submitting, setSubmitting] = createSignal(false);
@@ -30,9 +29,8 @@ export default function ChatBindConfirm() {
       if (!user) throw new Error("Not signed in");
       const created = await api.createChatBinding({
         group_uid: groupUid(),
-        platform: req()!.platform,
-        p_uid: req()!.p_uid,
-        bound_by: user.uid,
+        nonce: req()!.nonce,
+        request_id: req()!.id,
       });
       setSuccess(`Binding created: ${created.id}`);
     } catch (err: any) {
@@ -92,7 +90,11 @@ export default function ChatBindConfirm() {
               </For>
             </select>
           </div>
-          <button class="btn" type="submit" disabled={submitting()}>
+          <button
+            class="btn"
+            type="submit"
+            disabled={submitting() || !groupUid()}
+          >
             {submitting() ? "Confirming..." : "Confirm Binding"}
           </button>
         </form>

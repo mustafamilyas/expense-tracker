@@ -61,7 +61,7 @@ export const api = {
 
   // Chat bindings
   createChatBinding: (body: CreateChatBindingPayload) =>
-    request<ChatBinding>(`/chat-bindings`, { method: "POST", body }),
+    request<ChatBinding>(`/chat-bindings/accept`, { method: "POST", body }),
 };
 
 // Types from backend
@@ -92,9 +92,7 @@ export type ChatBinding = {
   revoked_at: string | null;
 };
 export type CreateChatBindingPayload = {
+  request_id: string;
+  nonce: string;
   group_uid: string;
-  platform: string;
-  p_uid: string;
-  status?: string;
-  bound_by: string;
 };
