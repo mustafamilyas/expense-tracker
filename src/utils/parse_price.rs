@@ -6,19 +6,22 @@ Rp 10.000
 Rp10.000
 Rp 10,000
 Rp10,000
+Rp. 1.234.567
+Rp.1.234.567
+Rp 5000
 */
 use anyhow::Result;
 
 pub fn parse_price(input: &str) -> Result<f64> {
     let input = input.trim();
+    let input = input.replace('.', "").replace(',', "");
     // Remove "Rp" prefix if exists
     let input = if input.to_lowercase().starts_with("rp") {
-        input[2..].trim()
+        input[2..].trim().to_string()
     } else {
         input
     };
     // Remove dots and commas
-    let input = input.replace('.', "").replace(',', "");
     // Parse to f64
     let price: f64 = input
         .parse()
@@ -62,6 +65,10 @@ mod tests {
             ("  Rp  1.234.567  ", 1234567.0),
             ("0", 0.0),
             ("  5000  ", 5000.0),
+            ("Rp. 5000", 5000.0),
+            ("Rp.1.234.567", 1234567.0),
+            ("Rp. 1,234,567", 1234567.0),
+            ("Rp 1,234,567", 1234567.0),
         ];
         for (input, expected) in cases {
             let result = parse_price(input).unwrap();

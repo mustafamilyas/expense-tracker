@@ -71,6 +71,7 @@ impl ExpenseCommand {
             // Split by commas
             let parts: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
             if parts.len() < 2 {
+                fail_entries.push(line.to_string());
                 continue; // Invalid entry, skip
             }
 
@@ -224,7 +225,7 @@ mod tests {
 
         let entries = ExpenseCommand::parse_command(input).unwrap();
         assert_eq!(entries.entries.len(), 2);
-        assert_eq!(entries.fail_entries.len(), 4);
+        assert_eq!(entries.fail_entries.len(), 3);
         assert_eq!(entries.entries[0].name, "Nasi Padang");
         assert_eq!(entries.entries[0].price, 10000.0);
         assert_eq!(

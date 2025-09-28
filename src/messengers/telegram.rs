@@ -7,7 +7,11 @@ use teloxide::{prelude::*, types::Message as TgMessage};
 use tracing::info;
 use uuid::Uuid;
 
-use crate::commands::{base::Command, expense::ExpenseCommand};
+use crate::commands::report::ReportCommand;
+use crate::commands::{
+    base::Command, expense::ExpenseCommand, expense_edit::ExpenseEditCommand,
+    history::HistoryCommand,
+};
 use crate::config::Config;
 use crate::lang::Lang;
 use crate::middleware::tier::check_tier_limit;
@@ -85,11 +89,11 @@ impl TelegramMessenger {
                                 .await?;
                         }
                         "/report" => {
-                            self.handle_report_command(msg.chat.id, &binding, &mut tx)
+                            self.handle_report_command(msg.chat.id, text, &binding, &mut tx)
                                 .await?;
                         }
                         "/history" => {
-                            self.handle_history_command(msg.chat.id, &binding, &mut tx)
+                            self.handle_history_command(msg.chat.id, text, &binding, &mut tx)
                                 .await?;
                         }
                         "/category" => {
@@ -212,101 +216,19 @@ impl TelegramMessenger {
     async fn handle_report_command(
         &self,
         chat_id: ChatId,
+        raw_message: &str,
         binding: &crate::repos::chat_binding::ChatBinding,
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Get all group members
-        let group_members = GroupMemberRepo::list(tx)
-            .await?
-            .into_iter()
-            .filter(|m| m.group_uid == binding.group_uid)
-            .collect::<Vec<_>>();
-
-        if group_members.is_empty() {
-            let response = "No group members found.";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        // Get expenses for the current month based on each user's start_over_date
-        let mut category_totals: HashMap<String, f64> = HashMap::new();
-        let mut total_expenses = 0.0;
-
-        for member in group_members {
-            let user = UserRepo::get(tx, member.user_uid).await?;
-            let (start_date, end_date) = self.calculate_month_range(user.start_over_date);
-
-            // Query expenses for this user in the current month
-            let expenses = sqlx::query(
-                r#"
-                SELECT e.price, c.name as category_name
-                FROM expense_entries e
-                JOIN categories c ON e.category_uid = c.uid
-                WHERE e.group_uid = $1
-                  AND e.created_by = $2
-                  AND e.created_at >= $3
-                  AND e.created_at < $4
-                "#,
-            )
-            .bind(binding.group_uid)
-            .bind(member.user_uid.to_string())
-            .bind(start_date)
-            .bind(end_date)
-            .fetch_all(tx.as_mut())
-            .await?;
-
-            for row in expenses {
-                let price: f64 = row.get("price");
-                let category_name: Option<String> = row.get("category_name");
-                let category_name = category_name.unwrap_or_else(|| "Uncategorized".to_string());
-                *category_totals.entry(category_name).or_insert(0.0) += price;
-                total_expenses += price;
+        let response = match ReportCommand::run(raw_message, binding, tx, &self.lang).await {
+            Ok(result) => result,
+            Err(e) => {
+                tracing::error!("Error generating report: {}", e);
+                let response = e.to_string();
+                self.bot.send_message(chat_id, response).await?;
+                return Ok(());
             }
-        }
-
-        // Get budgets for the group to include budget information
-        let budgets = BudgetRepo::list_by_group(tx, binding.group_uid).await?;
-        let mut budget_info = std::collections::HashMap::new();
-
-        for budget in budgets {
-            if let Ok(category) = CategoryRepo::get(tx, budget.category_uid).await {
-                budget_info.insert(category.name, budget.amount);
-            }
-        }
-
-        // Format the response
-        let mut response = "Summary\n\n".to_string();
-
-        for (category, amount) in category_totals.iter() {
-            response.push_str(&format!("{}\nRp. {:.0}", category, amount));
-
-            // Add budget information if available
-            if let Some(budget_amount) = budget_info.get(category) {
-                let remaining = budget_amount - amount;
-                let percentage = if *budget_amount > 0.0 {
-                    (amount / budget_amount) * 100.0
-                } else {
-                    0.0
-                };
-
-                let status = if remaining < 0.0 {
-                    "❌ Over budget"
-                } else if percentage >= 80.0 {
-                    "⚠️ Near limit"
-                } else {
-                    "✅ On track"
-                };
-
-                response.push_str(&format!(
-                    " / Rp. {:.0} ({:.1}%) {}",
-                    budget_amount, percentage, status
-                ));
-            }
-
-            response.push_str("\n\n");
-        }
-
-        response.push_str(&format!("Total\nRp. {:.0}", total_expenses));
+        };
 
         self.bot.send_message(chat_id, response).await?;
         Ok(())
@@ -315,84 +237,34 @@ impl TelegramMessenger {
     async fn handle_history_command(
         &self,
         chat_id: ChatId,
+        text: &str,
         binding: &crate::repos::chat_binding::ChatBinding,
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Get all group members to determine the date range
-        let group_members = GroupMemberRepo::list(tx)
-            .await?
-            .into_iter()
-            .filter(|m| m.group_uid == binding.group_uid)
-            .collect::<Vec<_>>();
+        let response = match HistoryCommand::run(text, binding, tx, &self.lang).await {
+            Ok(result) => result,
+            Err(e) => {
+                tracing::error!("Error handling history command: {}", e);
+                let mut response = e.to_string();
 
-        if group_members.is_empty() {
-            let response = "No group members found.";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
+                response.push_str("\n-----\n");
+                response.push_str("Format:\n/history\n/history YYYY-MM-DD\n/history YYYY-MM-DD YYYY-MM-DD\n\nContoh:\n/history\n/history 2025-09-01\n/history 2025-09-01 2025-09-03");
 
-        // Use the first user's start_over_date for the group history
-        // In a real implementation, you might want to handle multiple users differently
-        let first_user = UserRepo::get(tx, group_members[0].user_uid).await?;
-        let (start_date, end_date) = self.calculate_month_range(first_user.start_over_date);
-
-        // Query all expenses for the group in the current month
-        let expenses = sqlx::query(
-            r#"
-            SELECT e.uid, e.price, e.product, e.created_at, c.name as category_name, u.email as user_email
-            FROM expense_entries e
-            JOIN categories c ON e.category_uid = c.uid
-            JOIN group_members gm ON e.created_by = gm.user_uid::text
-            JOIN users u ON gm.user_uid = u.uid
-            WHERE e.group_uid = $1
-              AND e.created_at >= $2
-              AND e.created_at < $3
-            ORDER BY e.created_at DESC
-            "#
-        )
-        .bind(binding.group_uid)
-        .bind(start_date)
-        .bind(end_date)
-        .fetch_all(tx.as_mut())
-        .await?;
-
-        if expenses.is_empty() {
-            let response = "No expenses found for this month.";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        // Format the response
-        let mut response = format!("Expense History ({} entries)\n\n", expenses.len());
-
-        for row in expenses {
-            let _uid: Uuid = row.get("uid");
-            let price: f64 = row.get("price");
-            let product: String = row.get("product");
-            let created_at: chrono::DateTime<Utc> = row.get("created_at");
-            let category_name: Option<String> = row.get("category_name");
-            let user_email: String = row.get("user_email");
-
-            let category = category_name.unwrap_or_else(|| "Uncategorized".to_string());
-            let date_str = created_at.format("%d/%m/%Y %H:%M").to_string();
-
-            response.push_str(&format!(
-                "{} - {}\n{} | {} | Rp. {:.0}\n\n",
-                date_str,
-                user_email.split('@').next().unwrap_or(&user_email),
-                product,
-                category,
-                price
-            ));
-        }
+                self.bot.send_message(chat_id, response).await?;
+                return Ok(());
+            }
+        };
 
         // Truncate if too long for Telegram
-        if response.len() > 4000 {
-            response = response.chars().take(3950).collect::<String>();
-            response.push_str("...\n\n(Message truncated due to length)");
-        }
+        let final_response = if response.len() > 4000 {
+            let mut truncated = response.chars().take(3950).collect::<String>();
+            truncated.push_str("...\n\n(Message truncated due to length)");
+            truncated
+        } else {
+            response
+        };
 
-        self.bot.send_message(chat_id, response).await?;
+        self.bot.send_message(chat_id, final_response).await?;
         Ok(())
     }
 
@@ -1136,158 +1008,22 @@ impl TelegramMessenger {
         binding: &crate::repos::chat_binding::ChatBinding,
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Parse the expense edit command
-        let lines: Vec<&str> = text.lines().collect();
-        if lines.len() < 3 || lines.len() % 2 != 1 {
-            let response = self.lang.get("TELEGRAM__INVALID_EXPENSE_FORMAT");
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
+        let response = match ExpenseEditCommand::run(text, binding, tx, &self.lang).await {
+            Ok(result) => result,
+            Err(e) => {
+                tracing::error!("Error handling expense edit command: {}", e);
+                let mut response = e.to_string();
 
-        let mut updated_expenses = Vec::new();
+                response.push_str("\n-----\n");
+                response.push_str("Format:\n/expense-edit\n[id]\n[nama],[harga],[kategori]\n\nContoh:\n/expense-edit\n123e4567-e89b-12d3-a456-426614174000\nNasi Padang,10000,Makanan");
 
-        // Process each expense entry (id + data pairs)
-        let mut i = 1; // Skip the command line
-        while i + 1 < lines.len() {
-            let id_line = lines[i].trim();
-            let data_line = lines[i + 1].trim();
-
-            // Parse expense ID
-            let expense_uid = match Uuid::parse_str(id_line) {
-                Ok(uid) => uid,
-                Err(_) => {
-                    let response = self.lang.get_with_vars(
-                        "TELEGRAM__INVALID_EXPENSE_ID",
-                        HashMap::from([("id".to_string(), id_line.to_string())]),
-                    );
-                    self.bot.send_message(chat_id, response).await?;
-                    return Ok(());
-                }
-            };
-
-            // Parse expense data (support both formats)
-            let (product, price, category_name) = self.parse_expense_data(data_line)?;
-
-            // Find or create category
-            let category_uid = if !category_name.is_empty() {
-                // Try to find existing category
-                let categories = CategoryRepo::list_by_group(tx, binding.group_uid).await?;
-                if let Some(existing_cat) = categories
-                    .into_iter()
-                    .find(|c| c.name.to_lowercase() == category_name.to_lowercase())
-                {
-                    existing_cat.uid
-                } else {
-                    // Create new category
-                    let new_cat = CategoryRepo::create(
-                        tx,
-                        CreateCategoryDbPayload {
-                            group_uid: binding.group_uid,
-                            name: category_name,
-                            description: None,
-                            alias: None,
-                        },
-                    )
-                    .await?;
-                    new_cat.uid
-                }
-            } else {
-                // Use default category or first available
-                let categories = CategoryRepo::list_by_group(tx, binding.group_uid).await?;
-                if let Some(first_cat) = categories.first() {
-                    first_cat.uid
-                } else {
-                    // Create a default "General" category
-                    let new_cat = CategoryRepo::create(
-                        tx,
-                        CreateCategoryDbPayload {
-                            group_uid: binding.group_uid,
-                            name: "General".to_string(),
-                            description: Some("Default category".to_string()),
-                            alias: None,
-                        },
-                    )
-                    .await?;
-                    new_cat.uid
-                }
-            };
-
-            // Update expense entry
-            let updated_expense = ExpenseEntryRepo::update(
-                tx,
-                expense_uid,
-                crate::repos::expense_entry::UpdateExpenseEntryDbPayload {
-                    price: Some(price),
-                    product: Some(product.clone()),
-                    category_uid: Some(category_uid),
-                },
-            )
-            .await?;
-
-            updated_expenses.push(updated_expense);
-            i += 2; // Move to next id-data pair
-        }
-
-        // Format response
-        let mut response = "Expenses updated successfully!\n\n".to_string();
-        for expense in updated_expenses {
-            response.push_str(&format!(
-                "{}\n{}, Rp. {:.0}\n\n",
-                expense.uid, expense.product, expense.price
-            ));
-        }
+                self.bot.send_message(chat_id, response).await?;
+                return Ok(());
+            }
+        };
 
         self.bot.send_message(chat_id, response).await?;
         Ok(())
-    }
-
-    fn parse_expense_data(
-        &self,
-        data_line: &str,
-    ) -> Result<(String, f64, String), Box<dyn std::error::Error + Send + Sync>> {
-        // Try comma-separated format first
-        if data_line.contains(',') {
-            let parts: Vec<&str> = data_line.split(',').map(|s| s.trim()).collect();
-            if parts.len() >= 2 {
-                let product = parts[0].to_string();
-                let price_str = parts[1]
-                    .replace("Rp.", "")
-                    .replace(".", "")
-                    .replace(",", "")
-                    .trim()
-                    .to_string();
-                let price: f64 = price_str.parse()?;
-                let category = if parts.len() > 2 {
-                    parts[2].to_string()
-                } else {
-                    String::new()
-                };
-                return Ok((product, price, category));
-            }
-        }
-
-        // Try underscore-separated format
-        if data_line.contains('_') {
-            let parts: Vec<&str> = data_line.split('_').map(|s| s.trim()).collect();
-            if parts.len() >= 2 {
-                let product = parts[0].to_string();
-                let price_str = parts[1]
-                    .replace("Rp.", "")
-                    .replace(".", "")
-                    .replace(",", "")
-                    .trim()
-                    .to_string();
-                let price: f64 = price_str.parse()?;
-                let category = if parts.len() > 2 {
-                    parts[2].to_string()
-                } else {
-                    String::new()
-                };
-                return Ok((product, price, category));
-            }
-        }
-
-        Err("Invalid expense data format".into())
     }
 
     fn calculate_month_range(

@@ -14,6 +14,13 @@
   "MESSENGER__WELCOME_MESSAGE_START": "💡 Untuk memulai menambahkan pengeluaran, kirimkan perintah /expense!",
   "MESSENGER__ENTRY_HELP": "/expense adalah perintah untuk mencatat pengeluaran Anda\n\n# Format\n/expense\n[nama pengeluaran],[harga],[opsional kategori]\n\n# Contoh\n/expense\nbaby diaper, 10000, baby\n2 mcburger, Rp. 109.000",
   "MESSENGER__ENTRY_SUCCESS_HEADER": "✅ Pengeluaran berhasil dicatat! Jika ingin mengedit, salin dan modifikasi:\n\n-----\n/expense-edit\n\n",
-  "MESSENGER__ENTRY_SUCCESS_EDIT_ENTRY": "{{id}}\n{{item}}, {{price}}, ({{category}})\n\n",
-  "MESSENGER__ENTRY_FAIL_INVALID_FORMAT": "❌ Format tidak valid pada baris: \n{{line}}.\n\nGunakan:\n/expense [produk],[harga],[kategori]\n\n"
+  "MESSENGER__ENTRY_EDIT_SUCCESS_HEADER": "✅ Pengeluaran berhasil diedit! Jika ingin mengedit, salin dan modifikasi:\n\n-----\n/expense-edit\n\n",
+   "MESSENGER__ENTRY_SUCCESS_EDIT_ENTRY": "{{id}}\n{{item}}, {{price}}, ({{category}})\n\n",
+   "MESSENGER__ENTRY_FAIL_INVALID_FORMAT": "❌ Format tidak valid pada baris: \n{{line}}.\n\nGunakan:\n/expense [produk],[harga],[kategori]\n\n",
+   "REPORT__HEADER": "Pengeluaran {{start_date}} -> {{end_date}}:\n\n",
+   "REPORT__CATEGORY_HEADER": "Kategori:\n",
+   "REPORT__CATEGORY_ITEM": "{{index}}. {{category}}: Rp. {{amount}}\n",
+   "REPORT__UNCATEGORIZED": "Tidak Berkategori",
+   "REPORT__TOTAL": "\nTotal: Rp. {{total}}",
+   "REPORT__NO_EXPENSES": "Tidak ada pengeluaran dalam periode ini."
 }
