@@ -1,14 +1,10 @@
-use chrono::{DateTime, Utc, Datelike, Duration};
+use chrono::{DateTime, Datelike, Duration, Utc};
 use printpdf::*;
+use sqlx::PgPool;
 use std::collections::HashMap;
 use std::io::BufWriter;
-use sqlx::PgPool;
 
-use crate::repos::{
-    expense_entry::ExpenseEntryRepo,
-    category::CategoryRepo,
-    budget::BudgetRepo,
-};
+use crate::repos::{budget::BudgetRepo, category::CategoryRepo, expense_entry::ExpenseEntryRepo};
 
 #[derive(Debug)]
 pub struct MonthlyExpenseData {
@@ -57,12 +53,9 @@ impl MonthlyReportGenerator {
         let (current_start, current_end) = self.calculate_month_range(start_over_date);
 
         // Gather all data
-        let expense_data = self.gather_expense_data(
-            group_uid,
-            user_uid,
-            current_start,
-            current_end,
-        ).await?;
+        let expense_data = self
+            .gather_expense_data(group_uid, user_uid, current_start, current_end)
+            .await?;
 
         // Generate PDF
         let pdf_bytes = self.create_pdf_report(expense_data).await?;
@@ -87,9 +80,13 @@ impl MonthlyReportGenerator {
         for expense in current_expenses {
             if expense.created_by == user_uid.to_string()
                 && expense.created_at >= current_start
-                && expense.created_at < current_end {
-
-                let category = CategoryRepo::get(&mut tx, expense.category_uid).await?;
+                && expense.created_at < current_end
+            {
+                let category_uid = match expense.category_uid {
+                    Some(uid) => uid,
+                    None => continue, // Skip if no category
+                };
+                let category = CategoryRepo::get(&mut tx, category_uid).await?;
                 let category_name = category.name;
 
                 *category_breakdown.entry(category_name).or_insert(0.0) += expense.price;
@@ -105,7 +102,11 @@ impl MonthlyReportGenerator {
             let category = CategoryRepo::get(&mut tx, budget.category_uid).await?;
             let spent = category_breakdown.get(&category.name).unwrap_or(&0.0);
             let remaining = budget.amount - spent;
-            let percentage = if budget.amount > 0.0 { (spent / budget.amount) * 100.0 } else { 0.0 };
+            let percentage = if budget.amount > 0.0 {
+                (spent / budget.amount) * 100.0
+            } else {
+                0.0
+            };
 
             let status = if remaining < 0.0 {
                 BudgetStatus::OverBudget
@@ -115,13 +116,16 @@ impl MonthlyReportGenerator {
                 BudgetStatus::OnTrack
             };
 
-            budget_comparison.insert(category.name, BudgetComparison {
-                budget_amount: budget.amount,
-                spent_amount: *spent,
-                remaining,
-                percentage_used: percentage,
-                status,
-            });
+            budget_comparison.insert(
+                category.name,
+                BudgetComparison {
+                    budget_amount: budget.amount,
+                    spent_amount: *spent,
+                    remaining,
+                    percentage_used: percentage,
+                    status,
+                },
+            );
         }
 
         // Get previous month total
@@ -134,7 +138,8 @@ impl MonthlyReportGenerator {
         for expense in previous_expenses {
             if expense.created_by == user_uid.to_string()
                 && expense.created_at >= previous_month_start
-                && expense.created_at < previous_month_end {
+                && expense.created_at < previous_month_end
+            {
                 previous_total += expense.price;
             }
         }
@@ -151,7 +156,8 @@ impl MonthlyReportGenerator {
             for expense in month_expenses {
                 if expense.created_by == user_uid.to_string()
                     && expense.created_at >= month_start
-                    && expense.created_at < month_end {
+                    && expense.created_at < month_end
+                {
                     month_total += expense.price;
                 }
             }
@@ -182,7 +188,7 @@ impl MonthlyReportGenerator {
             "Monthly Expense Report",
             Mm(210.0), // A4 width
             Mm(297.0), // A4 height
-            "Layer 1"
+            "Layer 1",
         );
 
         let current_layer = doc.get_page(page1).get_layer(layer1);
@@ -190,24 +196,21 @@ impl MonthlyReportGenerator {
         // Add title
         let font = doc.add_builtin_font(BuiltinFont::HelveticaBold)?;
         current_layer.use_text(
-            format!("Monthly Expense Report - {}", data.period_start.format("%B %Y")),
+            format!(
+                "Monthly Expense Report - {}",
+                data.period_start.format("%B %Y")
+            ),
             24.0,
             Mm(20.0),
             Mm(280.0),
-            &font
+            &font,
         );
 
         // Add summary section
         let font_regular = doc.add_builtin_font(BuiltinFont::Helvetica)?;
         let mut y_position = 250.0;
 
-        current_layer.use_text(
-            "Summary",
-            18.0,
-            Mm(20.0),
-            Mm(y_position),
-            &font
-        );
+        current_layer.use_text("Summary", 18.0, Mm(20.0), Mm(y_position), &font);
         y_position -= 15.0;
 
         current_layer.use_text(
@@ -215,7 +218,7 @@ impl MonthlyReportGenerator {
             12.0,
             Mm(25.0),
             Mm(y_position),
-            &font_regular
+            &font_regular,
         );
         y_position -= 10.0;
 
@@ -233,23 +236,11 @@ impl MonthlyReportGenerator {
             "→ No change from last month".to_string()
         };
 
-        current_layer.use_text(
-            &change_text,
-            12.0,
-            Mm(25.0),
-            Mm(y_position),
-            &font_regular
-        );
+        current_layer.use_text(&change_text, 12.0, Mm(25.0), Mm(y_position), &font_regular);
         y_position -= 20.0;
 
         // Add category breakdown
-        current_layer.use_text(
-            "Category Breakdown",
-            16.0,
-            Mm(20.0),
-            Mm(y_position),
-            &font
-        );
+        current_layer.use_text("Category Breakdown", 16.0, Mm(20.0), Mm(y_position), &font);
         y_position -= 15.0;
 
         for (category, amount) in &data.category_breakdown {
@@ -264,7 +255,7 @@ impl MonthlyReportGenerator {
                 12.0,
                 Mm(25.0),
                 Mm(y_position),
-                &font_regular
+                &font_regular,
             );
             y_position -= 10.0;
         }
@@ -273,13 +264,7 @@ impl MonthlyReportGenerator {
 
         // Add budget comparison
         if !data.budget_comparison.is_empty() {
-            current_layer.use_text(
-                "Budget Status",
-                16.0,
-                Mm(20.0),
-                Mm(y_position),
-                &font
-            );
+            current_layer.use_text("Budget Status", 16.0, Mm(20.0), Mm(y_position), &font);
             y_position -= 15.0;
 
             for (category, budget) in &data.budget_comparison {
@@ -290,13 +275,18 @@ impl MonthlyReportGenerator {
                 };
 
                 current_layer.use_text(
-                    &format!("{}: Rp. {:.0}/Rp. {:.0} ({:.1}%) {}",
-                        category, budget.spent_amount, budget.budget_amount,
-                        budget.percentage_used, status_text),
+                    &format!(
+                        "{}: Rp. {:.0}/Rp. {:.0} ({:.1}%) {}",
+                        category,
+                        budget.spent_amount,
+                        budget.budget_amount,
+                        budget.percentage_used,
+                        status_text
+                    ),
                     12.0,
                     Mm(25.0),
                     Mm(y_position),
-                    &font_regular
+                    &font_regular,
                 );
                 y_position -= 10.0;
             }
@@ -341,7 +331,10 @@ impl MonthlyReportGenerator {
             chrono::NaiveDate::from_ymd_opt(current_year - 1, 12, start_day)
         } else {
             chrono::NaiveDate::from_ymd_opt(current_year, current_month - 1, start_day)
-        }.unwrap_or_else(|| chrono::NaiveDate::from_ymd_opt(current_year, current_month, 1).unwrap());
+        }
+        .unwrap_or_else(|| {
+            chrono::NaiveDate::from_ymd_opt(current_year, current_month, 1).unwrap()
+        });
 
         // If the calculated start date is in the future, use the previous month's start date
         if start_date > now.date_naive() {
@@ -351,7 +344,10 @@ impl MonthlyReportGenerator {
                 chrono::NaiveDate::from_ymd_opt(current_year - 1, 12, start_day)
             } else {
                 chrono::NaiveDate::from_ymd_opt(current_year, current_month - 2, start_day)
-            }.unwrap_or_else(|| chrono::NaiveDate::from_ymd_opt(current_year, current_month - 1, 1).unwrap());
+            }
+            .unwrap_or_else(|| {
+                chrono::NaiveDate::from_ymd_opt(current_year, current_month - 1, 1).unwrap()
+            });
         }
 
         let end_date = start_date + Duration::days(30); // Approximate month length

@@ -23,27 +23,10 @@ pub struct ExpenseEntry {
     pub created_by: String,
 
     pub group_uid: Uuid,
-    pub category_uid: Uuid,
+    pub category_uid: Option<Uuid>,
 
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-}
-
-impl ExpenseEntry {
-    pub fn new() -> Self {
-        let time = Utc::now();
-        ExpenseEntry {
-            uid: Uuid::now_v7(),
-            price: 0.0,
-            product: String::new(),
-            created_by: "system".to_string(),
-
-            group_uid: Uuid::now_v7(),
-            category_uid: Uuid::now_v7(),
-            created_at: time,
-            updated_at: time,
-        }
-    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -51,7 +34,7 @@ pub struct CreateExpenseEntryDbPayload {
     pub price: f64,
     pub product: String,
     pub group_uid: Uuid,
-    pub category_uid: Uuid,
+    pub category_uid: Option<Uuid>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -68,7 +51,7 @@ impl ExpenseEntryRepo {
     ) -> Result<ExpenseEntry, DatabaseError> {
         let uid = uuid::Uuid::new_v4();
         let query = format!(
-            "INSERT INTO {} (uid, price, product, group_uid, category_uid, created_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING uid, price, product, created_by, group_uid, category_uid, created_at, updated_at",
+            "INSERT INTO {} (uid, price, product, group_uid, category_uid, created_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING uid, price::float8 AS price, product, created_by, group_uid, category_uid, created_at, updated_at",
             Self::get_table_name()
         );
         let rec = sqlx::query_as::<_, ExpenseEntry>(&query)
@@ -88,7 +71,7 @@ impl ExpenseEntryRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<Vec<ExpenseEntry>, DatabaseError> {
         let query = format!(
-            "SELECT uid, price, product, created_by, group_uid, category_uid, created_at, updated_at FROM {} ORDER BY created_at DESC",
+            "SELECT uid, price::float8 AS price, product, created_by, group_uid, category_uid, created_at, updated_at FROM {} ORDER BY created_at DESC",
             Self::get_table_name()
         );
         let recs = sqlx::query_as::<_, ExpenseEntry>(&query)
@@ -103,7 +86,7 @@ impl ExpenseEntryRepo {
         group_uid: Uuid,
     ) -> Result<Vec<ExpenseEntry>, DatabaseError> {
         let query = format!(
-            "SELECT uid, price, product, created_by, group_uid, category_uid, created_at, updated_at FROM {} WHERE group_uid = $1 ORDER BY created_at DESC",
+            "SELECT uid, price::float8 AS price, product, created_by, group_uid, category_uid, created_at, updated_at FROM {} WHERE group_uid = $1 ORDER BY created_at DESC",
             Self::get_table_name()
         );
         let recs = sqlx::query_as::<_, ExpenseEntry>(&query)
@@ -119,7 +102,7 @@ impl ExpenseEntryRepo {
         uid: Uuid,
     ) -> Result<ExpenseEntry, DatabaseError> {
         let query = format!(
-            "SELECT uid, price, product, created_by, group_uid, category_uid, created_at, updated_at FROM {} WHERE uid = $1",
+            "SELECT uid, price::float8 AS price, product, created_by, group_uid, category_uid, created_at, updated_at FROM {} WHERE uid = $1",
             Self::get_table_name()
         );
         let rec = sqlx::query_as::<_, ExpenseEntry>(&query)
@@ -138,9 +121,9 @@ impl ExpenseEntryRepo {
         let current = Self::get(tx, uid).await?;
         let price = payload.price.unwrap_or(current.price);
         let product = payload.product.unwrap_or(current.product);
-        let category_uid = payload.category_uid.unwrap_or(current.category_uid);
+        let category_uid = payload.category_uid.or(current.category_uid);
         let query = format!(
-            "UPDATE {} SET price = $1, product = $2, category_uid = $3, updated_at = now() WHERE uid = $4 RETURNING uid, price, product, created_by, group_uid, category_uid, created_at, updated_at",
+            "UPDATE {} SET price = $1, product = $2, category_uid = $3, updated_at = now() WHERE uid = $4 RETURNING uid, price::float8 AS price, product, created_by, group_uid, category_uid, created_at, updated_at",
             Self::get_table_name()
         );
         let rec = sqlx::query_as::<_, ExpenseEntry>(&query)

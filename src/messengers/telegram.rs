@@ -4,8 +4,10 @@ use sqlx::{PgPool, Row};
 use std::collections::HashMap;
 use teloxide::types::ParseMode;
 use teloxide::{prelude::*, types::Message as TgMessage};
+use tracing::info;
 use uuid::Uuid;
 
+use crate::commands::{base::Command, expense::ExpenseCommand};
 use crate::config::Config;
 use crate::lang::Lang;
 use crate::middleware::tier::check_tier_limit;
@@ -41,6 +43,15 @@ impl TelegramMessenger {
         }
     }
 
+    async fn send_message(
+        &self,
+        chat_id: ChatId,
+        text: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        self.bot.send_message(chat_id, text).await?;
+        Ok(())
+    }
+
     async fn handle_message(
         &self,
         msg: TgMessage,
@@ -59,59 +70,85 @@ impl TelegramMessenger {
                 .await?
                 .into_iter()
                 .find(|b| b.platform == "telegram" && b.p_uid == chat_id && b.status == "active");
+            info!("Received message in chat {}: {}", chat_id, text);
 
             match binding {
                 Some(binding) => {
-                    // Chat is bound, handle commands
-                    if text.starts_with("/expense-edit") {
-                        self.handle_expense_edit_command(msg.chat.id, text, &binding, &mut tx)
+                    let command = text.split_whitespace().next().unwrap_or("");
+                    match command {
+                        "/expense" => {
+                            self.handle_expense_command(msg.chat.id, text, &binding, &mut tx)
+                                .await?;
+                        }
+                        "/expense-edit" => {
+                            self.handle_expense_edit_command(msg.chat.id, text, &binding, &mut tx)
+                                .await?;
+                        }
+                        "/report" => {
+                            self.handle_report_command(msg.chat.id, &binding, &mut tx)
+                                .await?;
+                        }
+                        "/history" => {
+                            self.handle_history_command(msg.chat.id, &binding, &mut tx)
+                                .await?;
+                        }
+                        "/category" => {
+                            self.handle_category_command(msg.chat.id, &binding, &mut tx)
+                                .await?;
+                        }
+                        "/category-add" => {
+                            self.handle_category_add_command(msg.chat.id, text, &binding, &mut tx)
+                                .await?;
+                        }
+                        "/category-edit" => {
+                            self.handle_category_edit_command(msg.chat.id, text, &binding, &mut tx)
+                                .await?;
+                        }
+                        "/category-alias" => {
+                            self.handle_category_alias_command(
+                                msg.chat.id,
+                                text,
+                                &binding,
+                                &mut tx,
+                            )
                             .await?;
-                    } else if text.starts_with("/expense") {
-                        self.handle_expense_command(msg.chat.id, text, &binding, &mut tx)
-                            .await?;
-                    } else if text.trim() == "/report" {
-                        self.handle_report_command(msg.chat.id, &binding, &mut tx)
-                            .await?;
-                    } else if text.trim() == "/history" {
-                        self.handle_history_command(msg.chat.id, &binding, &mut tx)
-                            .await?;
-                    } else if text.trim() == "/category" {
-                        self.handle_category_command(msg.chat.id, &binding, &mut tx)
-                            .await?;
-                    } else if text.starts_with("/category-add") {
-                        self.handle_category_add_command(msg.chat.id, text, &binding, &mut tx)
-                            .await?;
-                    } else if text.starts_with("/category-edit") {
-                        self.handle_category_edit_command(msg.chat.id, text, &binding, &mut tx)
-                            .await?;
-                    } else if text.starts_with("/category-alias") {
-                        self.handle_category_alias_command(msg.chat.id, text, &binding, &mut tx)
-                            .await?;
-                    } else if text.trim() == "/command" {
-                        self.handle_command_list_command(msg.chat.id).await?;
-                    } else if text.trim() == "/budget" {
-                        self.handle_budget_command(msg.chat.id, &binding, &mut tx)
-                            .await?;
-                    } else if text.starts_with("/budget-add") {
-                        self.handle_budget_add_command(msg.chat.id, text, &binding, &mut tx)
-                            .await?;
-                    } else if text.starts_with("/budget-edit") {
-                        self.handle_budget_edit_command(msg.chat.id, text, &binding, &mut tx)
-                            .await?;
-                    } else if text.starts_with("/budget-remove") {
-                        self.handle_budget_remove_command(msg.chat.id, text, &binding, &mut tx)
-                            .await?;
-                    } else if text.trim() == "/generate-report" {
-                        self.handle_generate_report_command(msg.chat.id, &binding, &mut tx)
-                            .await?;
-                    } else if text.trim() == "/subscription" {
-                        self.handle_subscription_command(msg.chat.id, &binding, &mut tx)
-                            .await?;
+                        }
+                        "/command" => {
+                            self.handle_command_list_command(msg.chat.id).await?;
+                        }
+                        "/budget" => {
+                            self.handle_budget_command(msg.chat.id, &binding, &mut tx)
+                                .await?;
+                        }
+                        "/budget-add" => {
+                            self.handle_budget_add_command(msg.chat.id, text, &binding, &mut tx)
+                                .await?;
+                        }
+                        "/budget-edit" => {
+                            self.handle_budget_edit_command(msg.chat.id, text, &binding, &mut tx)
+                                .await?;
+                        }
+                        "/budget-remove" => {
+                            self.handle_budget_remove_command(msg.chat.id, text, &binding, &mut tx)
+                                .await?;
+                        }
+                        "/generate-report" => {
+                            self.handle_generate_report_command(msg.chat.id, &binding, &mut tx)
+                                .await?;
+                        }
+                        "/subscription" => {
+                            self.handle_subscription_command(msg.chat.id, &binding, &mut tx)
+                                .await?;
+                        }
+                        _ => {
+                            // do nothing
+                            // TODO: maybe track unknown commands later
+                        }
                     }
                 }
                 None => {
                     // Chat not bound, handle binding request
-                    if text.trim() == "/sign-in" {
+                    if text.trim() == "/login" {
                         // Create bind request
                         let nonce = Uuid::new_v4().to_string();
                         let expires_at = Utc::now() + Duration::hours(1);
@@ -134,7 +171,7 @@ impl TelegramMessenger {
                             HashMap::from([("link".to_string(), bind_url)]),
                         );
 
-                        self.bot.send_message(msg.chat.id, response).await?;
+                        self.send_message(msg.chat.id, &response).await?;
                     } else {
                         let response = self.lang.get("TELEGRAM__CHAT_NOT_BOUND");
                         self.bot.send_message(msg.chat.id, response).await?;
@@ -154,138 +191,19 @@ impl TelegramMessenger {
         binding: &crate::repos::chat_binding::ChatBinding,
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Parse the expense command
-        let lines: Vec<&str> = text.lines().collect();
-        if lines.len() < 2 {
-            let response = "Invalid format. Use:\n/expense\n[name],[price],[optional category]";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
+        let response = match ExpenseCommand::run(text, binding, tx, &self.lang).await {
+            Ok(result) => result,
+            Err(e) => {
+                tracing::error!("Error handling expense command: {}", e);
+                let mut response = e.to_string();
 
-        let expense_line = lines[1].trim();
-        let parts: Vec<&str> = expense_line.split(',').map(|s| s.trim()).collect();
+                response.push_str("\n-----\n");
+                response.push_str(&self.lang.get("MESSENGER__ENTRY_HELP"));
 
-        if parts.len() < 2 {
-            let response = "Invalid format. Expected: [name],[price],[optional category]";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        let product = parts[0].to_string();
-
-        // Parse price - handle both formats like "10000" and "Rp. 109.000"
-        let price_str = parts[1]
-            .replace("Rp.", "")
-            .replace(".", "")
-            .replace(",", "")
-            .trim()
-            .to_string();
-        let price: f64 = match price_str.parse() {
-            Ok(p) => p,
-            Err(_) => {
-                let response = "Invalid price format. Use numbers like 10000 or Rp. 109.000";
                 self.bot.send_message(chat_id, response).await?;
                 return Ok(());
             }
         };
-
-        // Handle optional category
-        let category_name = if parts.len() > 2 {
-            Some(parts[2].to_string())
-        } else {
-            None
-        };
-
-        // Find or create category
-        let category_uid = if let Some(cat_name) = category_name {
-            // Try to find existing category
-            let categories = CategoryRepo::list_by_group(tx, binding.group_uid).await?;
-            if let Some(existing_cat) = categories
-                .into_iter()
-                .find(|c| c.name.to_lowercase() == cat_name.to_lowercase())
-            {
-                existing_cat.uid
-            } else {
-                // Create new category
-                let new_cat = CategoryRepo::create(
-                    tx,
-                    CreateCategoryDbPayload {
-                        group_uid: binding.group_uid,
-                        name: cat_name,
-                        description: None,
-                        alias: None,
-                    },
-                )
-                .await?;
-                new_cat.uid
-            }
-        } else {
-            // Use default category or first available
-            let categories = CategoryRepo::list_by_group(tx, binding.group_uid).await?;
-            if let Some(first_cat) = categories.first() {
-                first_cat.uid
-            } else {
-                // Create a default "General" category
-                let new_cat = CategoryRepo::create(
-                    tx,
-                    CreateCategoryDbPayload {
-                        group_uid: binding.group_uid,
-                        name: "General".to_string(),
-                        description: Some("Default category".to_string()),
-                        alias: None,
-                    },
-                )
-                .await?;
-                new_cat.uid
-            }
-        };
-
-        // Get user's subscription for tier checking
-        let subscription = SubscriptionRepo::get_by_user(tx, binding.bound_by).await?;
-        let usage_payload = UserUsageRepo::calculate_current_usage(tx, binding.bound_by).await?;
-        check_tier_limit(
-            &subscription,
-            "expenses_per_month",
-            usage_payload.total_expenses,
-        )?;
-
-        // Create expense entry
-        let expense = ExpenseEntryRepo::create_expense_entry(
-            tx,
-            CreateExpenseEntryDbPayload {
-                price,
-                product,
-                group_uid: binding.group_uid,
-                category_uid,
-            },
-        )
-        .await?;
-
-        // Format response
-        let mut response = format!(
-            "✅ Submitted! If you want to edit, copy and modify:\n\n-----\n\n/expense-edit\n\n{}\n{}, Rp. {:.0}",
-            expense.uid, expense.product, expense.price
-        );
-
-        // Check if near limit and add upgrade warning
-        let limits = subscription.get_tier().limits();
-        if limits.is_near_limit(usage_payload.total_expenses, limits.max_expenses_per_month) {
-            let percentage = (usage_payload.total_expenses * 100) / limits.max_expenses_per_month;
-            let suggested_tier = match "expenses_per_month" {
-                "expenses_per_month" => SubscriptionTier::Personal,
-                _ => SubscriptionTier::Personal,
-            };
-
-            response.push_str(&format!(
-                "\n\n⚠️ You're at {}% of your monthly expense limit ({}/{}).\n\
-                💡 Upgrade to {} for ${:.2}/month to track more expenses!",
-                percentage,
-                usage_payload.total_expenses,
-                limits.max_expenses_per_month,
-                suggested_tier.display_name(),
-                suggested_tier.price()
-            ));
-        }
 
         self.bot.send_message(chat_id, response).await?;
         Ok(())
@@ -741,7 +659,7 @@ impl TelegramMessenger {
             "/generate-report - Generate monthly PDF report",
             "/subscription - View subscription status and limits",
             "/command - Show this command list",
-            "/sign-in - Bind this chat to your expense group",
+            "/login - Bind this chat to your expense group",
         ];
 
         let response = format!("Available Commands:\n\n{}", commands.join("\n"));

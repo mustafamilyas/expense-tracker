@@ -1,13 +1,19 @@
 {
   "TELEGRAM__NOT_LOGIN": "Hello, anda belum bisa menggunakan {{brand}}. Silakan kirim `/start` untuk mendaftar.",
   "TELEGRAM__SIGN_IN_REQUEST": "Silahkan klik tautan berikut {{link}} untuk menghubungkan group ini dengan akun Anda.",
-  "TELEGRAM__CHAT_NOT_BOUND": "Chat ini belum terhubung dengan grup expense. Ketik /sign-in untuk memulai proses binding.",
-  "TELEGRAM__INVALID_EXPENSE_FORMAT": "Format tidak valid. Gunakan:\n/expense-edit\n[id]\n[produk],[harga],[kategori]\n\natau\n\n/expense-edit\n[id]\n[produk]_[harga]_[kategori]",
+  "TELEGRAM__CHAT_NOT_BOUND": "Chat ini belum terhubung dengan grup expense. Ketik /login untuk memulai proses binding.",
+  "TELEGRAM__INVALID_EXPENSE_FORMAT": "Format tidak valid. Gunakan:\n/expense [produk],[harga],[kategori]\n\natau\n\n/expense-edit\n[id]\n[produk]_[harga]_[kategori]",
   "TELEGRAM__INVALID_EXPENSE_ID": "ID expense tidak valid: {{id}}",
   "TELEGRAM__CATEGORY_ALIAS_ADDED": "Alias '{{alias}}' berhasil ditambahkan untuk kategori '{{category}}'!",
   "TELEGRAM__CATEGORY_ALIAS_EXISTS": "Alias '{{alias}}' sudah ada untuk kategori '{{category}}'.",
   "TELEGRAM__CATEGORY_NOT_FOUND": "Kategori '{{category}}' tidak ditemukan.",
   "TELEGRAM__EXPENSE_UPDATED": "Expense berhasil diupdate!",
   "TELEGRAM__EXPENSE_ADDED": "Expense berhasil ditambahkan!",
-  "TELEGRAM__COMMAND_LIST": "Daftar perintah yang tersedia:\n\n/expense [produk] [harga] [kategori] - Tambah expense\n/expense-edit - Edit expense\n/report - Lihat laporan\n/history - Lihat history\n/category - Lihat kategori\n/category-add [nama] - Tambah kategori\n/budget - Lihat budget\n/subscription - Lihat subscription"
+  "TELEGRAM__COMMAND_LIST": "Daftar perintah yang tersedia:\n\n/expense [produk] [harga] [kategori] - Tambah expense\n/expense-edit - Edit expense\n/report - Lihat laporan\n/history - Lihat history\n/category - Lihat kategori\n/category-add [nama] - Tambah kategori\n/budget - Lihat budget\n/subscription - Lihat subscription",
+  "MESSENGER__WELCOME_MESSAGE": "🎉 Selamat datang di {{brand}}! Expense Tracker yang memudahkan Anda mengelola pengeluaran siap digunakan!",
+  "MESSENGER__WELCOME_MESSAGE_START": "💡 Untuk memulai menambahkan pengeluaran, kirimkan perintah /expense!",
+  "MESSENGER__ENTRY_HELP": "/expense adalah perintah untuk mencatat pengeluaran Anda\n\n# Format\n/expense\n[nama pengeluaran],[harga],[opsional kategori]\n\n# Contoh\n/expense\nbaby diaper, 10000, baby\n2 mcburger, Rp. 109.000",
+  "MESSENGER__ENTRY_SUCCESS_HEADER": "✅ Pengeluaran berhasil dicatat! Jika ingin mengedit, salin dan modifikasi:\n\n-----\n/expense-edit\n\n",
+  "MESSENGER__ENTRY_SUCCESS_EDIT_ENTRY": "{{id}}\n{{item}}, {{price}}, ({{category}})\n\n",
+  "MESSENGER__ENTRY_FAIL_INVALID_FORMAT": "❌ Format tidak valid pada baris: \n{{line}}.\n\nGunakan:\n/expense [produk],[harga],[kategori]\n\n"
 }
