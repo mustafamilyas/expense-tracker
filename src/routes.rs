@@ -1,10 +1,11 @@
-pub mod expense_entry;
-pub mod users;
-pub mod health;
-pub mod version;
-pub mod expense_groups;
-pub mod categories;
 pub mod budgets;
+pub mod categories;
+pub mod categories_aliases;
 pub mod chat_bind_requests;
 pub mod chat_bindings;
+pub mod expense_entry;
+pub mod expense_groups;
 pub mod group_members;
+pub mod health;
+pub mod users;
+pub mod version;

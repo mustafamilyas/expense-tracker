@@ -6,7 +6,7 @@ use tracing::info;
 use crate::{
     commands::base::Command,
     lang::Lang,
-    repos::{chat_binding::ChatBinding, expense_group_member::GroupMemberRepo, user::UserRepo},
+    repos::{chat_binding::ChatBinding, expense_group::ExpenseGroupRepo, expense_group_member::GroupMemberRepo, user::UserRepo},
     utils::parse_price::format_price,
 };
 
@@ -139,10 +139,10 @@ impl HistoryCommand {
     ) -> Result<String> {
         let command = Self::parse_command(raw_message)?;
 
-        // Get all group members to determine the date range
-        let owner = UserRepo::get(tx, binding.bound_by).await?;
+        // Get the expense group to determine the date range
+        let group = ExpenseGroupRepo::get(tx, binding.group_uid).await?;
 
-        let (default_start, default_end) = Self::calculate_month_range(owner.start_over_date);
+        let (default_start, default_end) = Self::calculate_month_range(group.start_over_date);
 
         // Use provided dates or fall back to monthly range
         let start_date = command

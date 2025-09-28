@@ -11,6 +11,7 @@ pub struct ExpenseGroup {
     pub uid: Uuid,
     pub name: String,
     pub owner: Uuid,
+    pub start_over_date: i16,
     pub created_at: DateTime<Utc>,
 }
 
@@ -18,11 +19,13 @@ pub struct ExpenseGroup {
 pub struct CreateExpenseGroupDbPayload {
     pub name: String,
     pub owner: Uuid,
+    pub start_over_date: i16,
 }
 
 #[derive(Debug, Deserialize, serde::Serialize, ToSchema)]
 pub struct UpdateExpenseGroupDbPayload {
     pub name: Option<String>,
+    pub start_over_date: Option<i16>,
 }
 
 pub struct ExpenseGroupRepo;
@@ -38,7 +41,7 @@ impl ExpenseGroupRepo {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<Vec<ExpenseGroup>, DatabaseError> {
         let query = format!(
-            "SELECT uid, name, owner, created_at FROM {} ORDER BY created_at DESC",
+            "SELECT uid, name, owner, start_over_date, created_at FROM {} ORDER BY created_at DESC",
             Self::get_table_name()
         );
         let rows = sqlx::query_as::<_, ExpenseGroup>(&query)
@@ -53,7 +56,7 @@ impl ExpenseGroupRepo {
         owner: Uuid,
     ) -> Result<Vec<ExpenseGroup>, DatabaseError> {
         let query = format!(
-            "SELECT uid, name, owner, created_at FROM {} WHERE owner = $1 ORDER BY created_at DESC",
+            "SELECT uid, name, owner, start_over_date, created_at FROM {} WHERE owner = $1 ORDER BY created_at DESC",
             Self::get_table_name()
         );
         let rows = sqlx::query_as::<_, ExpenseGroup>(&query)
@@ -82,7 +85,7 @@ impl ExpenseGroupRepo {
         uid: Uuid,
     ) -> Result<ExpenseGroup, DatabaseError> {
         let query = format!(
-            "SELECT uid, name, owner, created_at FROM {} WHERE uid = $1",
+            "SELECT uid, name, owner, start_over_date, created_at FROM {} WHERE uid = $1",
             Self::get_table_name()
         );
         let row = sqlx::query_as::<_, ExpenseGroup>(&query)
@@ -99,13 +102,14 @@ impl ExpenseGroupRepo {
     ) -> Result<ExpenseGroup, DatabaseError> {
         let uid = Uuid::new_v4();
         let query = format!(
-            "INSERT INTO {} (uid, name, owner) VALUES ($1, $2, $3) RETURNING uid, name, owner, created_at",
+            "INSERT INTO {} (uid, name, owner, start_over_date) VALUES ($1, $2, $3, $4) RETURNING uid, name, owner, start_over_date, created_at",
             Self::get_table_name()
         );
         let row = sqlx::query_as::<_, ExpenseGroup>(&query)
             .bind(uid)
             .bind(payload.name)
             .bind(payload.owner)
+            .bind(payload.start_over_date)
             .fetch_one(tx.as_mut())
             .await
             .map_err(|e| DatabaseError::from_sqlx_error(e, "creating expense group"))?;
@@ -119,12 +123,14 @@ impl ExpenseGroupRepo {
     ) -> Result<ExpenseGroup, DatabaseError> {
         let current = Self::get(tx, uid).await?;
         let name = payload.name.unwrap_or(current.name);
+        let start_over_date = payload.start_over_date.unwrap_or(current.start_over_date);
         let query = format!(
-            "UPDATE {} SET name = $1 WHERE uid = $2 RETURNING uid, name, owner, created_at",
+            "UPDATE {} SET name = $1, start_over_date = $2 WHERE uid = $3 RETURNING uid, name, owner, start_over_date, created_at",
             Self::get_table_name()
         );
         let row = sqlx::query_as::<_, ExpenseGroup>(&query)
             .bind(name)
+            .bind(start_over_date)
             .bind(uid)
             .fetch_one(tx.as_mut())
             .await

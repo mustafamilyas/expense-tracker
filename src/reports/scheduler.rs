@@ -5,6 +5,7 @@ use sqlx::PgPool;
 
 use crate::repos::{
     user::UserRepo,
+    expense_group::ExpenseGroupRepo,
     expense_group_member::GroupMemberRepo,
     chat_binding::ChatBindingRepo,
     subscription::UserUsageRepo,
@@ -83,20 +84,20 @@ impl ReportScheduler {
         let mut tx = db_pool.begin().await?;
 
         // Get all users
-        let users = UserRepo::list(&mut tx).await?;
+        let groups = ExpenseGroupRepo::list(&mut tx).await?;
 
-        for user in users {
-            // Check if it's time to send the monthly report for this user
-            if Self::should_send_report(user.start_over_date) {
-                // Get user's groups
+        for group in groups {
+            // Check if it's time to send the monthly report for this group
+            if Self::should_send_report(group.start_over_date) {
+                // Get group members
                 let group_members = GroupMemberRepo::list(&mut tx).await?;
-                let user_groups: Vec<_> = group_members
+                let current_group_members: Vec<_> = group_members
                     .iter()
-                    .filter(|gm| gm.user_uid == user.uid)
+                    .filter(|gm| gm.group_uid == group.uid)
                     .collect();
 
-                for group_member in user_groups {
-                    // Check if user has active chat binding for this group
+                for group_member in current_group_members {
+                    // Check if group has active chat binding
                     let chat_bindings = ChatBindingRepo::list(&mut tx).await?;
                     let active_binding = chat_bindings
                         .iter()
@@ -106,13 +107,13 @@ impl ReportScheduler {
                         // Generate and send report
                         match report_generator.generate_monthly_report(
                             group_member.group_uid,
-                            user.uid,
-                            user.start_over_date,
+                            group_member.user_uid,
+                            group.start_over_date,
                         ).await {
                             Ok(_pdf_bytes) => {
                                 let _filename = format!(
                                     "monthly_report_{}_{}.pdf",
-                                    user.uid,
+                                    group_member.user_uid,
                                     Utc::now().format("%Y_%m")
                                 );
 
@@ -134,7 +135,7 @@ impl ReportScheduler {
                                 // to support sending files/documents. For now, we'll just send the message.
                             }
                             Err(e) => {
-                                tracing::error!("Failed to generate monthly report for user {}: {:?}", user.uid, e);
+                                tracing::error!("Failed to generate monthly report for user {}: {:?}", group_member.user_uid, e);
                             }
                         }
                     }

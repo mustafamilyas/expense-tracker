@@ -8,7 +8,7 @@ use tracing::info;
 use crate::{
     commands::base::Command,
     lang::Lang,
-    repos::{chat_binding::ChatBinding, expense_group_member::GroupMemberRepo, user::UserRepo},
+    repos::{chat_binding::ChatBinding, expense_group::ExpenseGroupRepo, expense_group_member::GroupMemberRepo, user::UserRepo},
     utils::parse_price::format_price,
 };
 
@@ -56,11 +56,11 @@ impl ReportCommand {
         let mut earliest_start = Utc::now();
         let mut latest_end = Utc::now() - Duration::days(365); // Far in the past
 
-        let user = UserRepo::get(tx, binding.bound_by).await?;
-        let (start_date, end_date) = Self::calculate_month_range(user.start_over_date);
+        let group = ExpenseGroupRepo::get(tx, binding.group_uid).await?;
+        let (start_date, end_date) = Self::calculate_month_range(group.start_over_date);
         info!(
-            "Calculating report for user {} from {} to {}",
-            user.email, start_date, end_date
+            "Calculating report for group {} from {} to {}",
+            group.name, start_date, end_date
         );
 
         // Track the overall date range

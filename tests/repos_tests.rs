@@ -42,7 +42,6 @@ async fn user_repo_crud_smoke() -> Result<()> {
         CreateUserDbPayload {
             email: email.clone(),
             phash: "hash".into(),
-            start_over_date: 1,
         },
     )
     .await?;
@@ -60,12 +59,10 @@ async fn user_repo_crud_smoke() -> Result<()> {
         UpdateUserDbPayload {
             email: Some(new_email.clone()),
             phash: None,
-            start_over_date: Some(2),
         },
     )
     .await?;
     assert_eq!(updated.email, new_email);
-    assert_eq!(updated.start_over_date, 2);
 
     // rollback test data implicitly by dropping tx
     drop(tx);
@@ -85,7 +82,6 @@ async fn category_repo_crud_smoke() -> Result<()> {
         CreateUserDbPayload {
             email: format!("owner+{}@example.com", Uuid::new_v4()),
             phash: "hash".into(),
-            start_over_date: 1,
         },
     )
     .await?;
@@ -94,6 +90,7 @@ async fn category_repo_crud_smoke() -> Result<()> {
         CreateExpenseGroupDbPayload {
             name: "Test Group".into(),
             owner: owner.uid,
+            start_over_date: 1,
         },
     )
     .await?;
@@ -105,7 +102,6 @@ async fn category_repo_crud_smoke() -> Result<()> {
             group_uid: group.uid,
             name: "Groceries".into(),
             description: Some("food".into()),
-            alias: None,
         },
     )
     .await?;
@@ -122,7 +118,6 @@ async fn category_repo_crud_smoke() -> Result<()> {
         UpdateCategoryDbPayload {
             name: Some("Supermarket".into()),
             description: None,
-            alias: None,
         },
     )
     .await?;
@@ -149,7 +144,6 @@ async fn category_repo_list_and_count() -> Result<()> {
         CreateUserDbPayload {
             email: format!("owner+{}@example.com", Uuid::new_v4()),
             phash: "hash".into(),
-            start_over_date: 1,
         },
     )
     .await?;
@@ -158,6 +152,7 @@ async fn category_repo_list_and_count() -> Result<()> {
         CreateExpenseGroupDbPayload {
             name: "Test Group 1".into(),
             owner: owner.uid,
+            start_over_date: 1,
         },
     )
     .await?;
@@ -166,6 +161,7 @@ async fn category_repo_list_and_count() -> Result<()> {
         CreateExpenseGroupDbPayload {
             name: "Test Group 2".into(),
             owner: owner.uid,
+            start_over_date: 1,
         },
     )
     .await?;
@@ -177,7 +173,6 @@ async fn category_repo_list_and_count() -> Result<()> {
             group_uid: group1.uid,
             name: "Groceries".into(),
             description: Some("food".into()),
-            alias: None,
         },
     )
     .await?;
@@ -187,7 +182,6 @@ async fn category_repo_list_and_count() -> Result<()> {
             group_uid: group1.uid,
             name: "Transport".into(),
             description: None,
-            alias: None,
         },
     )
     .await?;
@@ -197,7 +191,6 @@ async fn category_repo_list_and_count() -> Result<()> {
             group_uid: group2.uid,
             name: "Entertainment".into(),
             description: Some("fun".into()),
-            alias: None,
         },
     )
     .await?;
@@ -234,6 +227,7 @@ async fn category_repo_list_and_count() -> Result<()> {
         CreateExpenseGroupDbPayload {
             name: "Empty Group".into(),
             owner: owner.uid,
+            start_over_date: 1,
         },
     )
     .await?;
@@ -258,7 +252,6 @@ async fn tier_limits_enforcement_test() -> Result<()> {
         CreateUserDbPayload {
             email: format!("tier-test+{}@example.com", Uuid::new_v4()),
             phash: "hash".into(),
-            start_over_date: 1,
         },
     )
     .await?;
@@ -282,6 +275,7 @@ async fn tier_limits_enforcement_test() -> Result<()> {
         CreateExpenseGroupDbPayload {
             name: "Test Group 1".into(),
             owner: user.uid,
+            start_over_date: 1,
         },
     )
     .await?;
@@ -297,7 +291,6 @@ async fn tier_limits_enforcement_test() -> Result<()> {
                 group_uid: group1.uid,
                 name: format!("Category {}", i),
                 description: None,
-                alias: None,
             },
         )
         .await?;
@@ -311,7 +304,6 @@ async fn tier_limits_enforcement_test() -> Result<()> {
             group_uid: group1.uid,
             name: "Budget Test Category".into(),
             description: None,
-            alias: None,
         },
     )
     .await?;
@@ -365,7 +357,6 @@ async fn expense_group_repo_crud() -> Result<()> {
         CreateUserDbPayload {
             email: format!("expense-group-owner+{}@example.com", Uuid::new_v4()),
             phash: "hash".into(),
-            start_over_date: 1,
         },
     )
     .await?;
@@ -377,6 +368,7 @@ async fn expense_group_repo_crud() -> Result<()> {
         CreateExpenseGroupDbPayload {
             name: group_name.into(),
             owner: user.uid,
+            start_over_date: 1,
         },
     )
     .await?;
@@ -406,6 +398,7 @@ async fn expense_group_repo_crud() -> Result<()> {
         created.uid,
         expense_tracker::repos::expense_group::UpdateExpenseGroupDbPayload {
             name: Some(new_name.into()),
+            start_over_date: None,
         },
     )
     .await?;
@@ -447,7 +440,6 @@ async fn expense_group_repo_multiple_owners() -> Result<()> {
         CreateUserDbPayload {
             email: format!("user1+{}@example.com", Uuid::new_v4()),
             phash: "hash".into(),
-            start_over_date: 1,
         },
     )
     .await?;
@@ -457,7 +449,6 @@ async fn expense_group_repo_multiple_owners() -> Result<()> {
         CreateUserDbPayload {
             email: format!("user2+{}@example.com", Uuid::new_v4()),
             phash: "hash".into(),
-            start_over_date: 1,
         },
     )
     .await?;
@@ -468,6 +459,7 @@ async fn expense_group_repo_multiple_owners() -> Result<()> {
         CreateExpenseGroupDbPayload {
             name: "User1 Group".into(),
             owner: user1.uid,
+            start_over_date: 1,
         },
     )
     .await?;
@@ -477,6 +469,7 @@ async fn expense_group_repo_multiple_owners() -> Result<()> {
         CreateExpenseGroupDbPayload {
             name: "User2 Group".into(),
             owner: user2.uid,
+            start_over_date: 1,
         },
     )
     .await?;

@@ -38,7 +38,6 @@ async fn test_create_user_success() -> Result<()> {
         CreateUserDbPayload {
             email: email.clone(),
             phash: "test-hash".to_string(),
-            start_over_date: 1,
         },
     )
     .await;
@@ -54,7 +53,6 @@ async fn test_create_user_success() -> Result<()> {
     let payload = CreateUserPayload {
         email: format!("route-test-{}.example.com", Uuid::new_v4()),
         password: "password123".to_string(),
-        start_over_date: 1,
     };
 
     let app_state = AppState {
@@ -72,7 +70,6 @@ async fn test_create_user_success() -> Result<()> {
     .await;
     assert!(result.is_ok());
     let user = result.unwrap();
-    assert_eq!(user.user.start_over_date, 1);
     assert!(!user.user.uid.is_nil());
 
     Ok(())
@@ -86,13 +83,11 @@ async fn test_create_user_duplicate_email() -> Result<()> {
     let payload1 = CreateUserPayload {
         email: email.clone(),
         password: "password123".to_string(),
-        start_over_date: 1,
     };
 
     let payload2 = CreateUserPayload {
         email: email,
         password: "password456".to_string(),
-        start_over_date: 2,
     };
 
     let app_state = AppState {
@@ -135,7 +130,6 @@ async fn test_list_users() -> Result<()> {
         CreateUserDbPayload {
             email: email1.clone(),
             phash: "hash1".to_string(),
-            start_over_date: 1,
         },
     )
     .await?;
@@ -144,7 +138,6 @@ async fn test_list_users() -> Result<()> {
         CreateUserDbPayload {
             email: email2.clone(),
             phash: "hash2".to_string(),
-            start_over_date: 2,
         },
     )
     .await?;
@@ -183,7 +176,6 @@ async fn test_update_user_success() -> Result<()> {
         CreateUserDbPayload {
             email: email.clone(),
             phash: "oldhash".to_string(),
-            start_over_date: 1,
         },
     )
     .await?;
@@ -193,7 +185,6 @@ async fn test_update_user_success() -> Result<()> {
     let payload = UpdateUserPayload {
         email: Some(new_email.clone()),
         password: None,
-        start_over_date: Some(15),
     };
 
     let app_state = AppState {
@@ -213,7 +204,6 @@ async fn test_update_user_success() -> Result<()> {
     assert!(result.is_ok());
     let updated_user = result.unwrap();
     assert_eq!(updated_user.email, new_email);
-    assert_eq!(updated_user.start_over_date, 15);
 
     Ok(())
 }
@@ -225,7 +215,6 @@ async fn test_update_user_not_found() -> Result<()> {
     let payload = UpdateUserPayload {
         email: Some("should-fail@example.com".to_string()),
         password: None,
-        start_over_date: Some(1),
     };
 
     let app_state = AppState {
@@ -260,7 +249,6 @@ async fn test_login_user_http() -> Result<()> {
     let create_payload = CreateUserPayload {
         email: email.clone(),
         password: password.to_string(),
-        start_over_date: 1,
     };
 
     let app_state = AppState {

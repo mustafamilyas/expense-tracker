@@ -40,7 +40,6 @@ async fn create_test_user_and_auth(pool: &PgPool) -> Result<(Uuid, String)> {
         CreateUserDbPayload {
             email: email.clone(),
             phash: "test-hash".to_string(),
-            start_over_date: 1,
         },
     )
     .await?;
@@ -78,6 +77,7 @@ async fn test_list_expense_groups() -> Result<()> {
         CreateExpenseGroupDbPayload {
             name: "Test Group 1".to_string(),
             owner: user_uid,
+            start_over_date: 1,
         },
     )
     .await?;
@@ -86,6 +86,7 @@ async fn test_list_expense_groups() -> Result<()> {
         CreateExpenseGroupDbPayload {
             name: "Test Group 2".to_string(),
             owner: user_uid,
+            start_over_date: 1,
         },
     )
     .await?;
@@ -132,6 +133,7 @@ async fn test_get_expense_group() -> Result<()> {
         CreateExpenseGroupDbPayload {
             name: "Test Group".to_string(),
             owner: user_uid,
+            start_over_date: 1,
         },
     )
     .await?;
@@ -199,6 +201,7 @@ async fn test_create_expense_group() -> Result<()> {
 
     let payload = CreateExpenseGroupPayload {
         name: "New Test Group".to_string(),
+        start_over_date: 1,
     };
 
     let app_state = AppState {
@@ -244,6 +247,7 @@ async fn test_update_expense_group() -> Result<()> {
         CreateExpenseGroupDbPayload {
             name: "Original Name".to_string(),
             owner: user_uid,
+            start_over_date: 1,
         },
     )
     .await?;
@@ -251,6 +255,7 @@ async fn test_update_expense_group() -> Result<()> {
 
     let update_payload = expense_tracker::repos::expense_group::UpdateExpenseGroupDbPayload {
         name: Some("Updated Name".to_string()),
+        start_over_date: None,
     };
 
     let app_state = AppState {
@@ -295,6 +300,7 @@ async fn test_delete_expense_group() -> Result<()> {
         CreateExpenseGroupDbPayload {
             name: "Group to Delete".to_string(),
             owner: user_uid,
+            start_over_date: 1,
         },
     )
     .await?;

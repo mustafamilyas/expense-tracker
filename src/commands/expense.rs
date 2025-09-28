@@ -10,6 +10,7 @@ use crate::{
     middleware::tier::check_tier_limit,
     repos::{
         category::CategoryRepo,
+        category_alias::CategoryAliasRepo,
         chat_binding::ChatBinding,
         expense_entry::{CreateExpenseEntryDbPayload, ExpenseEntryRepo},
         subscription::{SubscriptionRepo, UserUsageRepo},
@@ -131,15 +132,17 @@ impl ExpenseCommand {
 
         let command = Self::parse_command(raw_message)?;
         let categories = CategoryRepo::list_by_group(tx, binding.group_uid).await?;
+        let aliases = CategoryAliasRepo::list_by_group(tx, binding.group_uid).await?;
 
         // For now, assume category already exists or is optional
         let mut category_map: HashMap<String, Uuid> = HashMap::new();
 
         for category in categories {
             category_map.insert(category.name.to_lowercase(), category.uid);
-            if let Some(alias) = &category.alias {
-                category_map.insert(alias.to_lowercase(), category.uid);
-            }
+        }
+
+        for alias in aliases {
+            category_map.insert(alias.alias.to_lowercase(), alias.category_uid);
         }
 
         // TODO: Better formatting

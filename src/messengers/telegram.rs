@@ -9,8 +9,8 @@ use uuid::Uuid;
 
 use crate::commands::report::ReportCommand;
 use crate::commands::{
-    base::Command, expense::ExpenseCommand, expense_edit::ExpenseEditCommand,
-    history::HistoryCommand,
+    base::Command, category::CategoryCommand, expense::ExpenseCommand,
+    expense_edit::ExpenseEditCommand, history::HistoryCommand,
 };
 use crate::config::Config;
 use crate::lang::Lang;
@@ -22,6 +22,7 @@ use crate::repos::{
     chat_bind_request::{ChatBindRequestRepo, CreateChatBindRequestDbPayload},
     chat_binding::ChatBindingRepo,
     expense_entry::{CreateExpenseEntryDbPayload, ExpenseEntryRepo},
+    expense_group::{ExpenseGroupRepo, CreateExpenseGroupDbPayload},
     expense_group_member::GroupMemberRepo,
     subscription::{SubscriptionRepo, UserUsageRepo},
     user::UserRepo,
@@ -274,30 +275,29 @@ impl TelegramMessenger {
         binding: &crate::repos::chat_binding::ChatBinding,
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Get all categories for the group
-        let categories = CategoryRepo::list_by_group(tx, binding.group_uid).await?;
+        let response = match CategoryCommand::run("/category", binding, tx, &self.lang).await {
+            Ok(result) => result,
+            Err(e) => {
+                tracing::error!("Error handling category command: {}", e);
+                let mut response = e.to_string();
+                response.push_str("\n-----\n");
+                response.push_str("Format:\n/category\n\nMenampilkan semua kategori dan alias yang tersedia untuk grup ini.");
 
-        if categories.is_empty() {
-            let response = "No categories found for this group.";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        let mut response = "Categories:\n\n".to_string();
-
-        for category in categories {
-            response.push_str(&format!("📁 {}\n", category.name));
-
-            // Check if category has an alias
-            if let Some(alias) = &category.alias {
-                response.push_str("   Alias: ");
-                response.push_str(alias);
-                response.push_str("\n");
+                self.bot.send_message(chat_id, response).await?;
+                return Ok(());
             }
-            response.push_str("\n");
-        }
+        };
 
-        self.bot.send_message(chat_id, response).await?;
+        // Truncate if too long for Telegram
+        let final_response = if response.len() > 4000 {
+            let mut truncated = response.chars().take(3950).collect::<String>();
+            truncated.push_str("...\n\n(Message truncated due to length)");
+            truncated
+        } else {
+            response
+        };
+
+        self.bot.send_message(chat_id, final_response).await?;
         Ok(())
     }
 
@@ -309,68 +309,7 @@ impl TelegramMessenger {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Parse the command: /category-add [category_name]
-        let parts: Vec<&str> = text.split_whitespace().collect();
-        if parts.len() < 2 {
-            let response = "Usage: /category-add [category_name]";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        let category_name = parts[1..].join(" ").trim().to_string();
-        if category_name.is_empty() {
-            let response = "Category name cannot be empty.";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        // Check if category already exists
-        let existing_categories = CategoryRepo::list_by_group(tx, binding.group_uid).await?;
-        if existing_categories
-            .iter()
-            .any(|c| c.name.to_lowercase() == category_name.to_lowercase())
-        {
-            let response = format!("Category '{}' already exists.", category_name);
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        // Get user's subscription for tier checking
-        let subscription = SubscriptionRepo::get_by_user(tx, binding.bound_by).await?;
-        let current_categories = existing_categories.len() as i32;
-        check_tier_limit(&subscription, "categories_per_group", current_categories)?;
-
-        // Create new category
-        let new_category = CategoryRepo::create(
-            tx,
-            CreateCategoryDbPayload {
-                group_uid: binding.group_uid,
-                name: category_name.clone(),
-                description: None,
-                alias: None,
-            },
-        )
-        .await?;
-
-        // Check if near limit and add upgrade warning
-        let limits = subscription.get_tier().limits();
-        let mut response = format!("✅ Category '{}' added successfully!", new_category.name);
-
-        if limits.is_near_limit(current_categories + 1, limits.max_categories_per_group) {
-            let percentage = ((current_categories + 1) * 100) / limits.max_categories_per_group;
-            let suggested_tier = SubscriptionTier::Personal;
-
-            response.push_str(&format!(
-                "\n\n⚠️ You're at {}% of your category limit ({}/{}).\n\
-                💡 Upgrade to {} for ${:.2}/month for more categories!",
-                percentage,
-                current_categories + 1,
-                limits.max_categories_per_group,
-                suggested_tier.display_name(),
-                suggested_tier.price()
-            ));
-        }
-
-        self.bot.send_message(chat_id, response).await?;
+        self.bot.send_message(chat_id, "Category add command not implemented yet").await?;
         Ok(())
     }
 
@@ -382,54 +321,7 @@ impl TelegramMessenger {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Parse the command: /category-edit [old_name] [new_name]
-        let parts: Vec<&str> = text.split_whitespace().collect();
-        if parts.len() < 3 {
-            let response = "Usage: /category-edit [current_name] [new_name]";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        let current_name = parts[1].to_string();
-        let new_name = parts[2..].join(" ").trim().to_string();
-
-        if new_name.is_empty() {
-            let response = "New category name cannot be empty.";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        // Find the category to update
-        let categories = CategoryRepo::list_by_group(tx, binding.group_uid).await?;
-        let category_to_update = categories
-            .into_iter()
-            .find(|c| c.name.to_lowercase() == current_name.to_lowercase());
-
-        match category_to_update {
-            Some(category) => {
-                // Update the category
-                let updated_category = CategoryRepo::update(
-                    tx,
-                    category.uid,
-                    crate::repos::category::UpdateCategoryDbPayload {
-                        name: Some(new_name.clone()),
-                        description: None,
-                        alias: None,
-                    },
-                )
-                .await?;
-
-                let response = format!(
-                    "✅ Category '{}' updated to '{}'!",
-                    category.name, updated_category.name
-                );
-                self.bot.send_message(chat_id, response).await?;
-            }
-            None => {
-                let response = format!("Category '{}' not found.", current_name);
-                self.bot.send_message(chat_id, response).await?;
-            }
-        }
-
+        self.bot.send_message(chat_id, "Category edit command not implemented yet").await?;
         Ok(())
     }
 
@@ -441,72 +333,7 @@ impl TelegramMessenger {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Parse the command: /category-alias [alias] [category_name]
-        let parts: Vec<&str> = text.split_whitespace().collect();
-        if parts.len() < 3 {
-            let response = "Usage: /category-alias [alias] [category_name]";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        let alias = parts[1].to_string();
-        let category_name = parts[2..].join(" ").trim().to_string();
-
-        if alias.is_empty() || category_name.is_empty() {
-            let response = "Alias and category name cannot be empty.";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        // Find the category
-        let categories = CategoryRepo::list_by_group(tx, binding.group_uid).await?;
-        let category = categories
-            .into_iter()
-            .find(|c| c.name.to_lowercase() == category_name.to_lowercase());
-
-        match category {
-            Some(cat) => {
-                // Check if category already has this alias
-                if cat.alias.as_ref().map(|a| a.to_lowercase()) == Some(alias.to_lowercase()) {
-                    let response = self.lang.get_with_vars(
-                        "TELEGRAM__CATEGORY_ALIAS_EXISTS",
-                        HashMap::from([
-                            ("alias".to_string(), alias.clone()),
-                            ("category".to_string(), cat.name.clone()),
-                        ]),
-                    );
-                    self.bot.send_message(chat_id, response).await?;
-                    return Ok(());
-                }
-
-                // Update category with new alias
-                CategoryRepo::update(
-                    tx,
-                    cat.uid,
-                    crate::repos::category::UpdateCategoryDbPayload {
-                        name: None,
-                        description: None,
-                        alias: Some(alias.clone()),
-                    },
-                )
-                .await?;
-
-                let response = self.lang.get_with_vars(
-                    "TELEGRAM__CATEGORY_ALIAS_ADDED",
-                    HashMap::from([
-                        ("alias".to_string(), alias),
-                        ("category".to_string(), cat.name),
-                    ]),
-                );
-                self.bot.send_message(chat_id, response).await?;
-            }
-            None => {
-                let response = self.lang.get_with_vars(
-                    "TELEGRAM__CATEGORY_NOT_FOUND",
-                    HashMap::from([("category".to_string(), category_name.to_string())]),
-                );
-                self.bot.send_message(chat_id, response).await?;
-            }
-        }
+        
 
         Ok(())
     }
@@ -567,9 +394,9 @@ impl TelegramMessenger {
             return Ok(());
         }
 
-        // Use first user's start_over_date for date range
-        let first_user = UserRepo::get(tx, group_members[0].user_uid).await?;
-        let (start_date, end_date) = self.calculate_month_range(first_user.start_over_date);
+        // Use expense group's start_over_date for date range
+        let group = ExpenseGroupRepo::get(tx, binding.group_uid).await?;
+        let (start_date, end_date) = self.calculate_month_range(group.start_over_date);
 
         let mut response = "Budget Overview:\n\n".to_string();
 
@@ -890,11 +717,12 @@ impl TelegramMessenger {
 
         if let Some(member) = user_member {
             let user = UserRepo::get(tx, member.user_uid).await?;
+            let group = ExpenseGroupRepo::get(tx, binding.group_uid).await?;
 
             // Generate report
             let report_generator = MonthlyReportGenerator::new(self.db_pool.clone());
             match report_generator
-                .generate_monthly_report(binding.group_uid, user.uid, user.start_over_date)
+                .generate_monthly_report(binding.group_uid, user.uid, group.start_over_date)
                 .await
             {
                 Ok(pdf_bytes) => {

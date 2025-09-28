@@ -4,6 +4,7 @@ use axum::{
 use serde::Deserialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
+use validator::Validate;
 
 use crate::{
     auth::{ group_guard::group_guard, AuthContext}, error::AppError,
@@ -79,9 +80,18 @@ pub async fn get(
     Ok(Json(res))
 }
 
-#[derive(Deserialize, serde::Serialize, ToSchema)]
+#[derive(Deserialize, serde::Serialize, ToSchema, Validate)]
 pub struct CreateExpenseGroupPayload {
     pub name: String,
+    #[validate(range(min = 1, max = 28))]
+    pub start_over_date: i16,
+}
+
+#[derive(Deserialize, serde::Serialize, ToSchema, Validate)]
+pub struct UpdateExpenseGroupPayload {
+    pub name: Option<String>,
+    #[validate(range(min = 1, max = 28))]
+    pub start_over_date: Option<i16>,
 }
 
 // TODO: infer owner from auth context
@@ -99,6 +109,8 @@ pub async fn create(
     Extension(auth): Extension<AuthContext>,
     Json(payload): Json<CreateExpenseGroupPayload>,
 ) -> Result<Json<ExpenseGroup>, AppError> {
+    payload.validate().map_err(|e| AppError::BadRequest(e.to_string()))?;
+
     let mut tx = state
         .db_pool
         .begin()
@@ -117,6 +129,7 @@ pub async fn create(
         CreateExpenseGroupDbPayload {
             name: payload.name,
             owner: auth.user_uid, // Use authenticated user as owner
+            start_over_date: payload.start_over_date,
         },
     )
     .await?;
@@ -127,11 +140,11 @@ pub async fn create(
 }
 
 #[utoipa::path(
-    put, 
-    path = "/expense-groups/{uid}", 
-    params(("uid" = Uuid, Path)), 
-    request_body = UpdateExpenseGroupDbPayload, 
-    responses((status = 200, body = ExpenseGroup)), 
+    put,
+    path = "/expense-groups/{uid}",
+    params(("uid" = Uuid, Path)),
+    request_body = UpdateExpenseGroupPayload,
+    responses((status = 200, body = ExpenseGroup)),
     tag = "Expense Groups",
     operation_id = "updateExpenseGroup",
     security(("bearerAuth" = []))
@@ -140,8 +153,9 @@ pub async fn update(
     State(state): State<AppState>,
     Extension(auth): Extension<AuthContext>,
     Path(uid): Path<Uuid>,
-    Json(payload): Json<UpdateExpenseGroupDbPayload>,
+    Json(payload): Json<UpdateExpenseGroupPayload>,
 ) -> Result<Json<ExpenseGroup>, AppError> {
+    payload.validate().map_err(|e| AppError::BadRequest(e.to_string()))?;
     group_guard(&auth, uid, &state.db_pool).await?;
     let mut tx = state
         .db_pool
@@ -151,7 +165,10 @@ pub async fn update(
     let updated = ExpenseGroupRepo::update(
         &mut tx,
         uid,
-        UpdateExpenseGroupDbPayload { name: payload.name },
+        UpdateExpenseGroupDbPayload {
+            name: payload.name,
+            start_over_date: payload.start_over_date,
+        },
     )
     .await?;
     tx.commit()

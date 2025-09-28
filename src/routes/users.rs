@@ -53,8 +53,6 @@ pub struct CreateUserPayload {
     pub email: String,
     #[validate(length(min = 8))]
     pub password: String,
-    #[validate(range(min = 1, max = 28))]
-    pub start_over_date: i16,
 }
 
 #[utoipa::path(post, path = "/auth/register", request_body = CreateUserPayload, responses((status = 200, body = UserRead)), tag = "Users", operation_id = "createUser")]
@@ -75,7 +73,6 @@ pub async fn create_user(
         CreateUserDbPayload {
             email: payload.email.clone(),
             phash,
-            start_over_date: payload.start_over_date,
         },
     )
     .await?;
@@ -85,6 +82,7 @@ pub async fn create_user(
         CreateExpenseGroupDbPayload {
             name: "Default".to_string(),
             owner: user.uid,
+            start_over_date: 1,
         },
     )
     .await?;
@@ -127,8 +125,7 @@ pub async fn create_user(
         token,
         user: UserRead {
             uid: user.uid,
-            email: user.email,  
-            start_over_date: user.start_over_date,
+            email: user.email,
         },
     }))
 }
@@ -162,8 +159,6 @@ pub struct UpdateUserPayload {
     pub email: Option<String>,
     #[validate(length(min = 8))]
     pub password: Option<String>,
-    #[validate(range(min = 1, max = 28))]
-    pub start_over_date: Option<i16>,
 }
 
 #[utoipa::path(put, path = "/users/{uid}", params(("uid" = Uuid, Path)), request_body = UpdateUserPayload, responses((status = 200, body = UserRead)), tag = "Users", operation_id = "updateUser", security(("bearerAuth" = [])))]
@@ -192,7 +187,6 @@ pub async fn update_user(
         crate::repos::user::UpdateUserDbPayload {
             email: payload.email,
             phash: new_phash,
-            start_over_date: payload.start_over_date,
         },
     )
     .await?;
@@ -242,7 +236,6 @@ pub async fn login_user(
         user: UserRead {
             uid: user.uid,
             email: user.email,
-            start_over_date: user.start_over_date,
         },
     }))
 }

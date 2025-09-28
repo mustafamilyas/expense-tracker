@@ -40,7 +40,6 @@ async fn create_test_user_and_auth(pool: &PgPool) -> Result<(Uuid, String)> {
         CreateUserDbPayload {
             email: email.clone(),
             phash: "test-hash".to_string(),
-            start_over_date: 1,
         },
     )
     .await?;
@@ -75,6 +74,7 @@ async fn create_test_group(pool: &PgPool, user_uid: Uuid) -> Result<Uuid> {
         CreateExpenseGroupDbPayload {
             name: "Test Group".to_string(),
             owner: user_uid,
+            start_over_date: 1,
         },
     )
     .await?;
@@ -96,7 +96,6 @@ async fn test_list_categories() -> Result<()> {
             group_uid,
             name: "Groceries".to_string(),
             description: Some("Food shopping".to_string()),
-            alias: None,
         },
     )
     .await?;
@@ -106,7 +105,6 @@ async fn test_list_categories() -> Result<()> {
             group_uid,
             name: "Transport".to_string(),
             description: None,
-            alias: None,
         },
     )
     .await?;
@@ -158,7 +156,6 @@ async fn test_get_category() -> Result<()> {
             group_uid,
             name: "Test Category".to_string(),
             description: Some("Test description".to_string()),
-            alias: None,
         },
     )
     .await?;
@@ -277,7 +274,6 @@ async fn test_update_category() -> Result<()> {
             group_uid,
             name: "Original Name".to_string(),
             description: Some("Original description".to_string()),
-            alias: None,
         },
     )
     .await?;

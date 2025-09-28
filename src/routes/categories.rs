@@ -106,7 +106,6 @@ pub async fn create(
             group_uid: payload.group_uid,
             name: payload.name,
             description: payload.description,
-            alias: payload.alias,
         },
     )
     .await?;
@@ -143,7 +142,6 @@ pub async fn update(
         UpdateCategoryDbPayload {
             name: payload.name,
             description: payload.description,
-            alias: payload.alias,
         },
     )
     .await?;

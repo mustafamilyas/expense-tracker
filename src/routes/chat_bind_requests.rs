@@ -1,5 +1,5 @@
 use axum::{
-    Extension, Json,
+    Json,
     extract::{Path, State},
 };
 use serde::Deserialize;
