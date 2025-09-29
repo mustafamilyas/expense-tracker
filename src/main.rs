@@ -64,6 +64,7 @@ async fn main() -> Result<()> {
         db_pool,
         jwt_secret: config.jwt_secret,
         chat_relay_secret: config.chat_relay_secret,
+        front_end_url: config.front_end_url,
         messenger_manager: Some(messenger_manager_arc),
         lang,
     });

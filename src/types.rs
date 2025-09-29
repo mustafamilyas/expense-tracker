@@ -215,6 +215,7 @@ pub struct AppState {
     pub version: String,
     pub jwt_secret: String,
     pub chat_relay_secret: String,
+    pub front_end_url: String,
     pub lang: Lang,
     pub messenger_manager: Option<Arc<MessengerManager>>,
 }
