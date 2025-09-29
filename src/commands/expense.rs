@@ -136,9 +136,11 @@ impl ExpenseCommand {
 
         // For now, assume category already exists or is optional
         let mut category_map: HashMap<String, Uuid> = HashMap::new();
+        let mut category_id_map: HashMap<Uuid, String> = HashMap::new();
 
         for category in categories {
             category_map.insert(category.name.to_lowercase(), category.uid);
+            category_id_map.insert(category.uid, category.name);
         }
 
         for alias in aliases {
@@ -185,9 +187,10 @@ impl ExpenseCommand {
                         ),
                         (
                             "category".to_string(),
-                            category_uid
-                                .map(|uid| uid.to_string())
-                                .unwrap_or_else(|| "Uncategorized".to_string()),
+                            category_id_map
+                                .get(&expense.category_uid.unwrap_or_default())
+                                .cloned()
+                                .unwrap_or_else(|| lang.get("MESSENGER__NO_CATEGORY_ASSIGNED")),
                         ),
                     ]),
                 ),
