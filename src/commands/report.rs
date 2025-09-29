@@ -8,7 +8,10 @@ use tracing::info;
 use crate::{
     commands::base::Command,
     lang::Lang,
-    repos::{chat_binding::ChatBinding, expense_group::ExpenseGroupRepo, expense_group_member::GroupMemberRepo, user::UserRepo},
+    repos::{
+        chat_binding::ChatBinding, expense_group::ExpenseGroupRepo,
+        expense_group_member::GroupMemberRepo, user::UserRepo,
+    },
     utils::parse_price::format_price,
 };
 
@@ -193,6 +196,10 @@ impl ReportCommand {
 impl Command for ReportCommand {
     fn get_command() -> &'static str {
         "/report"
+    }
+
+    fn get_instruction_text_key() -> &'static str {
+        "MESSENGER__REPORT_SHORT_INSTRUCTION"
     }
 }
 

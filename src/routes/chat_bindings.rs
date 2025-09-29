@@ -3,6 +3,7 @@ use axum::{
     extract::{Extension, State},
 };
 use serde::Deserialize;
+use std::collections::HashMap;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -12,6 +13,8 @@ use crate::{
     repos::{
         chat_bind_request::ChatBindRequestRepo,
         chat_binding::{ChatBinding, ChatBindingRepo, CreateChatBindingDbPayload},
+        expense_group::ExpenseGroupRepo,
+        user::UserRepo,
     },
     types::AppState,
 };
@@ -45,7 +48,9 @@ pub async fn accept(
 ) -> Result<Json<ChatBinding>, AppError> {
     group_guard(&auth, payload.group_uid, &state.db_pool).await?;
 
-    let mut tx = state.db_pool.begin().await.map_err(|e| AppError::from_sqlx_error(e, "beginning transaction for accepting chat binding"))?;
+    let mut tx = state.db_pool.begin().await.map_err(|e| {
+        AppError::from_sqlx_error(e, "beginning transaction for accepting chat binding")
+    })?;
     let chat_bind_request = ChatBindRequestRepo::get(&mut tx, payload.request_id).await?;
     // TODO: proper nonce handling (e.g. one-time use)
     if chat_bind_request.nonce != payload.nonce {
@@ -53,9 +58,15 @@ pub async fn accept(
     }
     if chat_bind_request.expires_at < chrono::Utc::now() {
         ChatBindRequestRepo::delete(&mut tx, payload.request_id).await?;
-        tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for expired chat bind request"))?;
+        tx.commit().await.map_err(|e| {
+            AppError::from_sqlx_error(e, "committing transaction for expired chat bind request")
+        })?;
         return Err(AppError::BadRequest("Chat bind request expired".into()));
     }
+    // Get user and group info for personalized message before committing
+    let user = UserRepo::get(&mut tx, auth.user_uid).await?;
+    let group = ExpenseGroupRepo::get(&mut tx, payload.group_uid).await?;
+
     let created = ChatBindingRepo::create(
         &mut tx,
         CreateChatBindingDbPayload {
@@ -67,22 +78,51 @@ pub async fn accept(
         },
     )
     .await?;
-    tx.commit().await.map_err(|e| AppError::from_sqlx_error(e, "committing transaction for creating chat binding"))?;
+    tx.commit().await.map_err(|e| {
+        AppError::from_sqlx_error(e, "committing transaction for creating chat binding")
+    })?;
 
     // Send welcome message to the chat
     if let Some(messenger_manager) = &state.messenger_manager {
-        let welcome_message = "🎉 Welcome! Your expense tracker is now ready to use!\n\n\
-            📝 Available commands:\n\
-            • /expense - Add new expenses\n\
-            • /expense-edit - Edit existing expenses\n\
-            • /report - View monthly summary\n\
-            • /history - View expense history\n\
-            • /budget - View budget overview\n\
-            • /category - Manage categories\n\
-            • /command - Show all commands\n\n\
-            💡 Start by adding your first expense with /expense!";
+        let mut welcome_message = state.lang.get_with_vars(
+            "MESSENGER__WELCOME_INTRO",
+            HashMap::from([
+                ("name".to_string(), user.email.clone()),
+                ("group".to_string(), group.name.clone()),
+            ]),
+        );
 
-        if let Err(e) = messenger_manager.send_message(&created.platform, &created.p_uid, welcome_message).await {
+        welcome_message.push_str(&format!(
+            "{}\n\n",
+            state.lang.get("MESSENGER__WELCOME_COMMAND_LIST_HEADER")
+        ));
+
+        // List all commands with their instructions
+        let commands = vec![
+            "MESSENGER__EXPENSE_SHORT_INSTRUCTION",
+            "MESSENGER__EXPENSE_EDIT_SHORT_INSTRUCTION",
+            "MESSENGER__CATEGORY_SHORT_INSTRUCTION",
+            "MESSENGER__CATEGORY_EDIT_SHORT_INSTRUCTION",
+            "MESSENGER__HISTORY_SHORT_INSTRUCTION",
+            "MESSENGER__REPORT_SHORT_INSTRUCTION",
+            "MESSENGER__HELP_SHORT_INSTRUCTION",
+        ];
+
+        for (index, key) in commands.iter().enumerate() {
+            welcome_message.push_str(&format!("{}. {}\n", index + 1, state.lang.get(key)));
+        }
+        welcome_message.push('\n');
+
+        welcome_message.push_str(&format!(
+            "{}\n\n",
+            state.lang.get("MESSENGER__WELCOME_CLOSING")
+        ));
+        welcome_message.push_str(&format!("{}", state.lang.get("MESSENGER__WELCOME_CTA")));
+
+        if let Err(e) = messenger_manager
+            .send_message(&created.platform, &created.p_uid, &welcome_message)
+            .await
+        {
             tracing::error!("Failed to send welcome message: {:?}", e);
         }
     }

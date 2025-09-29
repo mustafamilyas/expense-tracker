@@ -1,10 +1,25 @@
 use std::collections::HashMap;
 use tera::{Context, Tera};
 
+#[derive(Debug)]
 pub struct Lang {
     pub lang: String,
     pub messages: HashMap<String, String>,
     pub tera: Tera,
+}
+
+impl Clone for Lang {
+    fn clone(&self) -> Self {
+        let mut tera = Tera::default();
+        for (key, message) in &self.messages {
+            tera.add_raw_template(key, message).unwrap();
+        }
+        Lang {
+            lang: self.lang.clone(),
+            messages: self.messages.clone(),
+            tera,
+        }
+    }
 }
 
 impl Lang {

@@ -210,6 +210,10 @@ impl Command for ExpenseCommand {
     fn get_command() -> &'static str {
         "/expense"
     }
+
+    fn get_instruction_text_key() -> &'static str {
+        "MESSENGER__EXPENSE_SHORT_INSTRUCTION"
+    }
 }
 
 #[cfg(test)]

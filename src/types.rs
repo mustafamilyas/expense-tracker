@@ -207,7 +207,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
 
-use crate::messengers::MessengerManager;
+use crate::{lang::Lang, messengers::MessengerManager};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -215,6 +215,7 @@ pub struct AppState {
     pub version: String,
     pub jwt_secret: String,
     pub chat_relay_secret: String,
+    pub lang: Lang,
     pub messenger_manager: Option<Arc<MessengerManager>>,
 }
 

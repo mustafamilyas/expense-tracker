@@ -8,7 +8,6 @@ export default function Register() {
   const [params] = useSearchParams();
   const [email, setEmail] = createSignal("");
   const [password, setPassword] = createSignal("");
-  const [startOverDate, setStartOverDate] = createSignal<number>(1);
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
   const [success, setSuccess] = createSignal<string | null>(null);
@@ -19,7 +18,7 @@ export default function Register() {
     setError(null);
     setSuccess(null);
     try {
-      const res = await api.register(email(), password(), startOverDate());
+      const res = await api.register(email(), password());
       auth.signIn(res);
       setSuccess("Registration successful. You can now sign in.");
       const to = params.redirect
@@ -66,23 +65,6 @@ export default function Register() {
             class="input"
             value={password()}
             onInput={(e) => setPassword(e.currentTarget.value)}
-            required
-          />
-        </div>
-        <div>
-          <label class="label" for="startOverDate">
-            Start over date (1-28)
-          </label>
-          <input
-            id="startOverDate"
-            type="number"
-            min="1"
-            max="28"
-            class="input"
-            value={startOverDate()}
-            onInput={(e) =>
-              setStartOverDate(parseInt(e.currentTarget.value || "1", 10))
-            }
             required
           />
         </div>

@@ -186,6 +186,10 @@ impl Command for ExpenseEditCommand {
     fn get_command() -> &'static str {
         "/expense-edit"
     }
+
+    fn get_instruction_text_key() -> &'static str {
+        "MESSENGER__EXPENSE_EDIT_SHORT_INSTRUCTION"
+    }
 }
 
 #[cfg(test)]

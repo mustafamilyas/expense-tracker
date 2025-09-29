@@ -1,6 +1,6 @@
 import { auth } from "./auth";
 
-const base = ""; // same-origin; vite dev proxies /api routes to Axum
+const base = import.meta?.env?.VITE_BACKEND_URL || ""; // Backend URL, defaults to same-origin for dev proxy
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
@@ -43,10 +43,10 @@ export const api = {
       method: "POST",
       body: { email, password },
     }),
-  register: (email: string, password: string, start_over_date: number) =>
+  register: (email: string, password: string) =>
     request<LoginResponse>(`/auth/register`, {
       method: "POST",
-      body: { email, password, start_over_date },
+      body: { email, password },
     }),
 
   // Users

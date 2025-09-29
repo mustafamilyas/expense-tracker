@@ -2,15 +2,14 @@ use async_trait::async_trait;
 use chrono::{Datelike, Duration, NaiveDate, Utc};
 use sqlx::{PgPool, Row};
 use std::collections::HashMap;
-use teloxide::types::ParseMode;
 use teloxide::{prelude::*, types::Message as TgMessage};
 use tracing::info;
 use uuid::Uuid;
 
 use crate::commands::report::ReportCommand;
 use crate::commands::{
-    base::Command, category::CategoryCommand, expense::ExpenseCommand,
-    expense_edit::ExpenseEditCommand, history::HistoryCommand,
+    category::CategoryCommand, category_edit::CategoryEditCommand, expense::ExpenseCommand,
+    expense_edit::ExpenseEditCommand, help::HelpCommand, history::HistoryCommand,
 };
 use crate::config::Config;
 use crate::lang::Lang;
@@ -18,11 +17,10 @@ use crate::middleware::tier::check_tier_limit;
 use crate::reports::MonthlyReportGenerator;
 use crate::repos::{
     budget::{BudgetRepo, CreateBudgetDbPayload},
-    category::{CategoryRepo, CreateCategoryDbPayload},
+    category::CategoryRepo,
     chat_bind_request::{ChatBindRequestRepo, CreateChatBindRequestDbPayload},
     chat_binding::ChatBindingRepo,
-    expense_entry::{CreateExpenseEntryDbPayload, ExpenseEntryRepo},
-    expense_group::{ExpenseGroupRepo, CreateExpenseGroupDbPayload},
+    expense_group::ExpenseGroupRepo,
     expense_group_member::GroupMemberRepo,
     subscription::{SubscriptionRepo, UserUsageRepo},
     user::UserRepo,
@@ -75,7 +73,6 @@ impl TelegramMessenger {
                 .await?
                 .into_iter()
                 .find(|b| b.platform == "telegram" && b.p_uid == chat_id && b.status == "active");
-            info!("Received message in chat {}: {}", chat_id, text);
 
             match binding {
                 Some(binding) => {
@@ -101,48 +98,12 @@ impl TelegramMessenger {
                             self.handle_category_command(msg.chat.id, &binding, &mut tx)
                                 .await?;
                         }
-                        "/category-add" => {
-                            self.handle_category_add_command(msg.chat.id, text, &binding, &mut tx)
-                                .await?;
-                        }
                         "/category-edit" => {
                             self.handle_category_edit_command(msg.chat.id, text, &binding, &mut tx)
                                 .await?;
                         }
-                        "/category-alias" => {
-                            self.handle_category_alias_command(
-                                msg.chat.id,
-                                text,
-                                &binding,
-                                &mut tx,
-                            )
-                            .await?;
-                        }
-                        "/command" => {
-                            self.handle_command_list_command(msg.chat.id).await?;
-                        }
-                        "/budget" => {
-                            self.handle_budget_command(msg.chat.id, &binding, &mut tx)
-                                .await?;
-                        }
-                        "/budget-add" => {
-                            self.handle_budget_add_command(msg.chat.id, text, &binding, &mut tx)
-                                .await?;
-                        }
-                        "/budget-edit" => {
-                            self.handle_budget_edit_command(msg.chat.id, text, &binding, &mut tx)
-                                .await?;
-                        }
-                        "/budget-remove" => {
-                            self.handle_budget_remove_command(msg.chat.id, text, &binding, &mut tx)
-                                .await?;
-                        }
-                        "/generate-report" => {
-                            self.handle_generate_report_command(msg.chat.id, &binding, &mut tx)
-                                .await?;
-                        }
-                        "/subscription" => {
-                            self.handle_subscription_command(msg.chat.id, &binding, &mut tx)
+                        "/help" => {
+                            self.handle_help_command(msg.chat.id, &binding, &mut tx)
                                 .await?;
                         }
                         _ => {
@@ -301,18 +262,6 @@ impl TelegramMessenger {
         Ok(())
     }
 
-    async fn handle_category_add_command(
-        &self,
-        chat_id: ChatId,
-        text: &str,
-        binding: &crate::repos::chat_binding::ChatBinding,
-        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Parse the command: /category-add [category_name]
-        self.bot.send_message(chat_id, "Category add command not implemented yet").await?;
-        Ok(())
-    }
-
     async fn handle_category_edit_command(
         &self,
         chat_id: ChatId,
@@ -320,386 +269,38 @@ impl TelegramMessenger {
         binding: &crate::repos::chat_binding::ChatBinding,
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Parse the command: /category-edit [old_name] [new_name]
-        self.bot.send_message(chat_id, "Category edit command not implemented yet").await?;
-        Ok(())
-    }
+        let response = match CategoryEditCommand::run(text, binding, tx, &self.lang).await {
+            Ok(result) => result,
+            Err(e) => {
+                tracing::error!("Error handling category edit command: {}", e);
+                let mut response = e.to_string();
+                response.push_str("\n-----\n");
+                response.push_str("Format:\n/category-edit\n[id]\n[name]=[alias1, alias2, ...]\n\nContoh:\n/category-edit\n123e4567-e89b-12d3-a456-426614174000\nMakanan=makan, food");
 
-    async fn handle_category_alias_command(
-        &self,
-        chat_id: ChatId,
-        text: &str,
-        binding: &crate::repos::chat_binding::ChatBinding,
-        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Parse the command: /category-alias [alias] [category_name]
-        
-
-        Ok(())
-    }
-
-    async fn handle_command_list_command(
-        &self,
-        chat_id: ChatId,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let commands = vec![
-            "/expense - Add a new expense",
-            "/expense-edit - Edit existing expenses",
-            "/report - View monthly expense summary",
-            "/history - View detailed expense history",
-            "/budget - View budget overview",
-            "/budget-add - Add a new budget",
-            "/budget-edit - Edit budget amount",
-            "/budget-remove - Remove a budget",
-            "/category - List all categories and aliases",
-            "/category-add - Add a new category",
-            "/category-edit - Edit a category name",
-            "/category-alias - Add an alias for a category",
-            "/generate-report - Generate monthly PDF report",
-            "/subscription - View subscription status and limits",
-            "/command - Show this command list",
-            "/login - Bind this chat to your expense group",
-        ];
-
-        let response = format!("Available Commands:\n\n{}", commands.join("\n"));
-        self.bot.send_message(chat_id, response).await?;
-        Ok(())
-    }
-
-    async fn handle_budget_command(
-        &self,
-        chat_id: ChatId,
-        binding: &crate::repos::chat_binding::ChatBinding,
-        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Get all budgets for the group
-        let budgets = BudgetRepo::list_by_group(tx, binding.group_uid).await?;
-
-        if budgets.is_empty() {
-            let response = "No budgets configured for this group.";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        // Get group members to calculate date range
-        let group_members = GroupMemberRepo::list(tx)
-            .await?
-            .into_iter()
-            .filter(|m| m.group_uid == binding.group_uid)
-            .collect::<Vec<_>>();
-
-        if group_members.is_empty() {
-            let response = "No group members found.";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        // Use expense group's start_over_date for date range
-        let group = ExpenseGroupRepo::get(tx, binding.group_uid).await?;
-        let (start_date, end_date) = self.calculate_month_range(group.start_over_date);
-
-        let mut response = "Budget Overview:\n\n".to_string();
-
-        for budget in budgets {
-            // Get category name
-            let category = CategoryRepo::get(tx, budget.category_uid).await?;
-            let category_name = category.name;
-
-            // Calculate spending for this category in current period
-            let spending = sqlx::query(
-                r#"
-                SELECT COALESCE(SUM(e.price), 0) as total_spent
-                FROM expense_entries e
-                WHERE e.group_uid = $1
-                  AND e.category_uid = $2
-                  AND e.created_at >= $3
-                  AND e.created_at < $4
-                "#,
-            )
-            .bind(binding.group_uid)
-            .bind(budget.category_uid)
-            .bind(start_date)
-            .bind(end_date)
-            .fetch_one(tx.as_mut())
-            .await?;
-
-            let spent: f64 = spending.get("total_spent");
-            let remaining = budget.amount - spent;
-            let percentage = if budget.amount > 0.0 {
-                (spent / budget.amount) * 100.0
-            } else {
-                0.0
-            };
-
-            let status = if remaining < 0.0 {
-                "❌ Over budget"
-            } else if percentage >= 80.0 {
-                "⚠️ Near limit"
-            } else {
-                "✅ On track"
-            };
-
-            response.push_str(&format!(
-                "📊 {}\nBudget: Rp. {:.0}\nSpent: Rp. {:.0}\nRemaining: Rp. {:.0}\nUsage: {:.1}%\n{}\n\n",
-                category_name,
-                budget.amount,
-                spent,
-                remaining,
-                percentage,
-                status
-            ));
-        }
-
-        self.bot.send_message(chat_id, response).await?;
-        Ok(())
-    }
-
-    async fn handle_budget_add_command(
-        &self,
-        chat_id: ChatId,
-        text: &str,
-        binding: &crate::repos::chat_binding::ChatBinding,
-        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Parse the command: /budget-add [category_name] [amount]
-        let parts: Vec<&str> = text.split_whitespace().collect();
-        if parts.len() < 3 {
-            let response = "Usage: /budget-add [category_name] [amount]";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        let category_name = parts[1].to_string();
-        let amount_str = parts[2];
-
-        // Parse amount
-        let amount: f64 = match amount_str.parse() {
-            Ok(a) => a,
-            Err(_) => {
-                let response = "Invalid amount format. Please use a number.";
                 self.bot.send_message(chat_id, response).await?;
                 return Ok(());
             }
         };
 
-        if amount <= 0.0 {
-            let response = "Budget amount must be greater than 0.";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        // Find category
-        let categories = CategoryRepo::list_by_group(tx, binding.group_uid).await?;
-        let category = categories
-            .into_iter()
-            .find(|c| c.name.to_lowercase() == category_name.to_lowercase());
-
-        match category {
-            Some(cat) => {
-                // Check if budget already exists for this category
-                let existing_budgets = BudgetRepo::list_by_group(tx, binding.group_uid).await?;
-                if existing_budgets.iter().any(|b| b.category_uid == cat.uid) {
-                    let response = format!(
-                        "Budget already exists for category '{}'. Use /budget-edit to modify it.",
-                        cat.name
-                    );
-                    self.bot.send_message(chat_id, response).await?;
-                    return Ok(());
-                }
-
-                // Get user's subscription for tier checking
-                let subscription = SubscriptionRepo::get_by_user(tx, binding.bound_by).await?;
-                let current_budgets = existing_budgets.len() as i32;
-                check_tier_limit(&subscription, "budgets_per_group", current_budgets)?;
-
-                // Create budget
-                let budget = BudgetRepo::create(
-                    tx,
-                    CreateBudgetDbPayload {
-                        group_uid: binding.group_uid,
-                        category_uid: cat.uid,
-                        amount,
-                        period_year: None, // Monthly budget by default
-                        period_month: None,
-                    },
-                )
-                .await?;
-
-                // Check if near limit and add upgrade warning
-                let limits = subscription.get_tier().limits();
-                let mut response = format!(
-                    "✅ Budget of Rp. {:.0} added for category '{}'!",
-                    budget.amount, cat.name
-                );
-
-                if limits.is_near_limit(current_budgets + 1, limits.max_budgets_per_group) {
-                    let percentage = ((current_budgets + 1) * 100) / limits.max_budgets_per_group;
-                    let suggested_tier = SubscriptionTier::Personal;
-
-                    response.push_str(&format!(
-                        "\n\n⚠️ You're at {}% of your budget limit ({}/{}).\n\
-                        💡 Upgrade to {} for ${:.2}/month for more budgets!",
-                        percentage,
-                        current_budgets + 1,
-                        limits.max_budgets_per_group,
-                        suggested_tier.display_name(),
-                        suggested_tier.price()
-                    ));
-                }
-
-                self.bot.send_message(chat_id, response).await?;
-            }
-            None => {
-                let response = format!(
-                    "Category '{}' not found. Use /category to see available categories.",
-                    category_name
-                );
-                self.bot.send_message(chat_id, response).await?;
-            }
-        }
-
+        self.bot.send_message(chat_id, response).await?;
         Ok(())
     }
 
-    async fn handle_budget_edit_command(
+    async fn handle_help_command(
         &self,
         chat_id: ChatId,
-        text: &str,
         binding: &crate::repos::chat_binding::ChatBinding,
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Parse the command: /budget-edit [category_name] [new_amount]
-        let parts: Vec<&str> = text.split_whitespace().collect();
-        if parts.len() < 3 {
-            let response = "Usage: /budget-edit [category_name] [new_amount]";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        let category_name = parts[1].to_string();
-        let amount_str = parts[2];
-
-        // Parse amount
-        let new_amount: f64 = match amount_str.parse() {
-            Ok(a) => a,
-            Err(_) => {
-                let response = "Invalid amount format. Please use a number.";
-                self.bot.send_message(chat_id, response).await?;
-                return Ok(());
+        let response = match HelpCommand::run("/help", binding, tx, &self.lang).await {
+            Ok(result) => result,
+            Err(e) => {
+                tracing::error!("Error handling help command: {}", e);
+                format!("Error: {}", e)
             }
         };
 
-        if new_amount <= 0.0 {
-            let response = "Budget amount must be greater than 0.";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        // Find category
-        let categories = CategoryRepo::list_by_group(tx, binding.group_uid).await?;
-        let category = categories
-            .into_iter()
-            .find(|c| c.name.to_lowercase() == category_name.to_lowercase());
-
-        match category {
-            Some(cat) => {
-                // Find existing budget
-                let budgets = BudgetRepo::list_by_group(tx, binding.group_uid).await?;
-                let budget = budgets.into_iter().find(|b| b.category_uid == cat.uid);
-
-                match budget {
-                    Some(b) => {
-                        // Update budget
-                        let updated_budget = BudgetRepo::update(
-                            tx,
-                            b.uid,
-                            crate::repos::budget::UpdateBudgetDbPayload {
-                                amount: Some(new_amount),
-                                period_year: None,
-                                period_month: None,
-                            },
-                        )
-                        .await?;
-
-                        let response = format!(
-                            "✅ Budget for '{}' updated from Rp. {:.0} to Rp. {:.0}!",
-                            cat.name, b.amount, updated_budget.amount
-                        );
-                        self.bot.send_message(chat_id, response).await?;
-                    }
-                    None => {
-                        let response = format!(
-                            "No budget found for category '{}'. Use /budget-add to create one.",
-                            cat.name
-                        );
-                        self.bot.send_message(chat_id, response).await?;
-                    }
-                }
-            }
-            None => {
-                let response = format!(
-                    "Category '{}' not found. Use /category to see available categories.",
-                    category_name
-                );
-                self.bot.send_message(chat_id, response).await?;
-            }
-        }
-
-        Ok(())
-    }
-
-    async fn handle_budget_remove_command(
-        &self,
-        chat_id: ChatId,
-        text: &str,
-        binding: &crate::repos::chat_binding::ChatBinding,
-        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Parse the command: /budget-remove [category_name]
-        let parts: Vec<&str> = text.split_whitespace().collect();
-        if parts.len() < 2 {
-            let response = "Usage: /budget-remove [category_name]";
-            self.bot.send_message(chat_id, response).await?;
-            return Ok(());
-        }
-
-        let category_name = parts[1].to_string();
-
-        // Find category
-        let categories = CategoryRepo::list_by_group(tx, binding.group_uid).await?;
-        let category = categories
-            .into_iter()
-            .find(|c| c.name.to_lowercase() == category_name.to_lowercase());
-
-        match category {
-            Some(cat) => {
-                // Find existing budget
-                let budgets = BudgetRepo::list_by_group(tx, binding.group_uid).await?;
-                let budget = budgets.into_iter().find(|b| b.category_uid == cat.uid);
-
-                match budget {
-                    Some(b) => {
-                        // Delete budget
-                        BudgetRepo::delete(tx, b.uid).await?;
-                        let response =
-                            format!("✅ Budget for '{}' removed successfully!", cat.name);
-                        self.bot.send_message(chat_id, response).await?;
-                    }
-                    None => {
-                        let response = format!("No budget found for category '{}'.", cat.name);
-                        self.bot.send_message(chat_id, response).await?;
-                    }
-                }
-            }
-            None => {
-                let response = format!(
-                    "Category '{}' not found. Use /category to see available categories.",
-                    category_name
-                );
-                self.bot.send_message(chat_id, response).await?;
-            }
-        }
-
+        self.bot.send_message(chat_id, response).await?;
         Ok(())
     }
 
@@ -742,90 +343,6 @@ impl TelegramMessenger {
             self.bot.send_message(chat_id, response).await?;
         }
 
-        Ok(())
-    }
-
-    async fn handle_subscription_command(
-        &self,
-        chat_id: ChatId,
-        binding: &crate::repos::chat_binding::ChatBinding,
-        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Get user's subscription
-        let subscription = SubscriptionRepo::get_by_user(tx, binding.bound_by).await?;
-        let limits = subscription.get_tier().limits();
-
-        // Get current usage
-        let usage = UserUsageRepo::calculate_current_usage(tx, binding.bound_by).await?;
-
-        let status = if subscription.status == "active" {
-            "✅ Active"
-        } else {
-            "❌ Inactive"
-        };
-
-        let response = format!(
-            "📊 Subscription Status\n\n\
-            Current Tier: {}\n\
-            Status: {}\n\
-            Price: ${:.2}/month\n\n\
-            📈 Current Usage:\n\
-            • Groups: {}/{}\n\
-            • Total Members: {}\n\
-            • Expenses This Month: {}/{}\n\n\
-            🎯 Limits:\n\
-            • Max Categories per Group: {}\n\
-            • Max Budgets per Group: {}\n\
-            • Data Retention: {} days\n\
-            • Advanced Reports: {}\n\
-            • Data Export: {}\n\
-            • Priority Support: {}\n\n\
-            💡 Upgrade Options:\n\
-            • Personal: $4.99/month\n\
-            • Family: $9.99/month\n\
-            • Team: $19.99/month\n\
-            • Enterprise: $49.99/month",
-            subscription.get_tier().display_name(),
-            status,
-            subscription.get_tier().price(),
-            usage.groups_count,
-            if limits.max_groups == -1 {
-                "∞".to_string()
-            } else {
-                limits.max_groups.to_string()
-            },
-            usage.total_members,
-            usage.total_expenses,
-            if limits.max_expenses_per_month == -1 {
-                "∞".to_string()
-            } else {
-                limits.max_expenses_per_month.to_string()
-            },
-            if limits.max_categories_per_group == -1 {
-                "∞".to_string()
-            } else {
-                limits.max_categories_per_group.to_string()
-            },
-            if limits.max_budgets_per_group == -1 {
-                "∞".to_string()
-            } else {
-                limits.max_budgets_per_group.to_string()
-            },
-            limits.data_retention_days,
-            if limits.advanced_reports {
-                "✅"
-            } else {
-                "❌"
-            },
-            if limits.export_data { "✅" } else { "❌" },
-            if limits.priority_support {
-                "✅"
-            } else {
-                "❌"
-            }
-        );
-
-        self.bot.send_message(chat_id, response).await?;
         Ok(())
     }
 

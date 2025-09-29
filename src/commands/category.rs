@@ -37,18 +37,18 @@ impl CategoryCommand {
          or
         2. create new category
         /category
-        [category name]=>[alias1, alias2, ...]
-        [category name]=>[alias1, alias2, ...]
+        [category name]=[alias1, alias2, ...]
+        [category name]=[alias1, alias2, ...]
         ...
 
         Example:
         /category
-        Makanan=>makan, food
-        Transportasi=>transport, travel
-        Hiburan=>fun, entertainment
+        Makanan=makan, food
+        Transportasi=transport, travel
+        Hiburan=fun, entertainment
 
         or
-        /category Makanan=>makan, food
+        /category Makanan=makan, food
 
 
     */
@@ -78,11 +78,11 @@ impl CategoryCommand {
                 continue;
             }
 
-            // Parse format: "CategoryName=>alias1, alias2, alias3"
-            let parts: Vec<&str> = line.split("=>").map(|s| s.trim()).collect();
+            // Parse format: "CategoryName=alias1, alias2, alias3"
+            let parts: Vec<&str> = line.split("=").map(|s| s.trim()).collect();
             if parts.len() != 2 {
                 return Err(anyhow::anyhow!(
-                    "Invalid format: {}. Expected 'CategoryName=>alias1, alias2, ...'",
+                    "Invalid format: {}. Expected 'CategoryName=alias1, alias2, ...'",
                     line
                 ));
             }
@@ -270,6 +270,10 @@ impl CategoryCommand {
 impl Command for CategoryCommand {
     fn get_command() -> &'static str {
         "/category"
+    }
+
+    fn get_instruction_text_key() -> &'static str {
+        "MESSENGER__CATEGORY_SHORT_INSTRUCTION"
     }
 }
 

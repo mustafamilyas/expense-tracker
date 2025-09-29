@@ -1,6 +1,7 @@
 use anyhow::Result;
 use expense_tracker::{
     app, db,
+    lang::Lang,
     messengers::{MessengerManager, telegram::TelegramMessenger},
     reports::ReportScheduler,
     telegram_logger::TelegramLogger,
@@ -13,10 +14,14 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 async fn main() -> Result<()> {
     // initialize tracing
     let config = expense_tracker::config::Config::from_env();
+    let lang = Lang::from_json("id");
 
     let registry = tracing_subscriber::registry();
 
-    if let (Some(token), Some(chat_id)) = (config.telegram_log_token.clone(), config.telegram_log_chat_id) {
+    if let (Some(token), Some(chat_id)) = (
+        config.telegram_log_token.clone(),
+        config.telegram_log_chat_id,
+    ) {
         let telegram_logger = TelegramLogger::new(token, chat_id);
         registry
             .with(telegram_logger)
@@ -60,6 +65,7 @@ async fn main() -> Result<()> {
         jwt_secret: config.jwt_secret,
         chat_relay_secret: config.chat_relay_secret,
         messenger_manager: Some(messenger_manager_arc),
+        lang,
     });
 
     // run our app with hyper, listening globally on port 3000

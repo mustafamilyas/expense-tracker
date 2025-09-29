@@ -8,6 +8,7 @@ use axum::{
     extract::{Path, State}, Extension, Json
 };
 use serde::Deserialize;
+use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
@@ -121,6 +122,8 @@ pub async fn create_user(
     // Issue JWT for web clients
     let token = crate::auth::encode_web_jwt(user.uid, &state.jwt_secret, 60 * 60 * 24 * 7)
         .map_err(AppError::Internal)?;
+
+    info!("Created new user: {}", user.email);
     Ok(Json(LoginResponse {
         token,
         user: UserRead {

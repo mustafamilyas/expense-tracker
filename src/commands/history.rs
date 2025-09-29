@@ -6,7 +6,10 @@ use tracing::info;
 use crate::{
     commands::base::Command,
     lang::Lang,
-    repos::{chat_binding::ChatBinding, expense_group::ExpenseGroupRepo, expense_group_member::GroupMemberRepo, user::UserRepo},
+    repos::{
+        chat_binding::ChatBinding, expense_group::ExpenseGroupRepo,
+        expense_group_member::GroupMemberRepo, user::UserRepo,
+    },
     utils::parse_price::format_price,
 };
 
@@ -261,6 +264,10 @@ impl HistoryCommand {
 impl Command for HistoryCommand {
     fn get_command() -> &'static str {
         "/history"
+    }
+
+    fn get_instruction_text_key() -> &'static str {
+        "MESSENGER__HISTORY_SHORT_INSTRUCTION"
     }
 }
 
