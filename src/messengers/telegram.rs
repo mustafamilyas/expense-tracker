@@ -95,7 +95,7 @@ impl TelegramMessenger {
                                 .await?;
                         }
                         "/category" => {
-                            self.handle_category_command(msg.chat.id, &binding, &mut tx)
+                            self.handle_category_command(msg.chat.id, text, &binding, &mut tx)
                                 .await?;
                         }
                         "/category-edit" => {
@@ -233,10 +233,11 @@ impl TelegramMessenger {
     async fn handle_category_command(
         &self,
         chat_id: ChatId,
+        text: &str,
         binding: &crate::repos::chat_binding::ChatBinding,
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let response = match CategoryCommand::run("/category", binding, tx, &self.lang).await {
+        let response = match CategoryCommand::run(text, binding, tx, &self.lang).await {
             Ok(result) => result,
             Err(e) => {
                 tracing::error!("Error handling category command: {}", e);

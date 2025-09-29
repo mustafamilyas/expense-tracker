@@ -3,6 +3,7 @@ use axum::{body::Body, http::Request};
 use expense_tracker::{
     app::build_router,
     db::make_db_pool,
+    lang::Lang,
     repos::user::{CreateUserDbPayload, UserRepo},
     routes::users::{CreateUserPayload, LoginUserPayload, UpdateUserPayload},
     types::AppState,
@@ -56,6 +57,7 @@ async fn test_create_user_success() -> Result<()> {
     };
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -91,6 +93,7 @@ async fn test_create_user_duplicate_email() -> Result<()> {
     };
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -144,6 +147,7 @@ async fn test_list_users() -> Result<()> {
     tx.commit().await?;
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -188,6 +192,7 @@ async fn test_update_user_success() -> Result<()> {
     };
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -218,6 +223,7 @@ async fn test_update_user_not_found() -> Result<()> {
     };
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -252,6 +258,7 @@ async fn test_login_user_http() -> Result<()> {
     };
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -301,6 +308,7 @@ async fn test_login_user_invalid_credentials() -> Result<()> {
     let pool = setup_test_db().await?;
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),

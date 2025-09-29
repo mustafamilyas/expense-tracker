@@ -6,6 +6,7 @@ use axum::{
 use expense_tracker::{
     app::build_router,
     db::make_db_pool,
+    lang::Lang,
     repos::{
         expense_group::{CreateExpenseGroupDbPayload, ExpenseGroupRepo},
         subscription::{CreateSubscriptionDbPayload, SubscriptionRepo},
@@ -111,6 +112,7 @@ async fn test_list_categories() -> Result<()> {
     tx.commit().await?;
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -162,6 +164,7 @@ async fn test_get_category() -> Result<()> {
     tx.commit().await?;
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -196,6 +199,7 @@ async fn test_get_category_not_found() -> Result<()> {
     let (_user_uid, token) = create_test_user_and_auth(&pool).await?;
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -231,6 +235,7 @@ async fn test_create_category() -> Result<()> {
     };
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -286,6 +291,7 @@ async fn test_update_category() -> Result<()> {
     };
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -362,8 +368,9 @@ async fn test_update_category() -> Result<()> {
 #[tokio::test]
 async fn test_categories_unauthorized() -> Result<()> {
     let pool = setup_test_db().await?;
-
+    let lang = Lang::from_json("id");
     let app_state = AppState {
+        lang,
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),

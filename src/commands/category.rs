@@ -293,7 +293,7 @@ mod tests {
 
     #[test]
     fn test_parse_command_create_single_line() {
-        let input = "/category Makanan=>makan, food";
+        let input = "/category Makanan = makan, food";
         let command = CategoryCommand::parse_command(input).unwrap();
         match &command.action {
             CategoryAction::Create(entries) => {
@@ -307,7 +307,7 @@ mod tests {
 
     #[test]
     fn test_parse_command_create_multiple_lines() {
-        let input = "/category\nMakanan=>makan, food\nTransportasi=>transport";
+        let input = "/category\nMakanan = makan, food\nTransportasi=transport";
         let command = CategoryCommand::parse_command(input).unwrap();
         match &command.action {
             CategoryAction::Create(entries) => {

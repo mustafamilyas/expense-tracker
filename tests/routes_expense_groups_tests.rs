@@ -1,7 +1,12 @@
 use anyhow::Result;
+use axum::{
+    body::Body,
+    http::{Request, StatusCode},
+};
 use expense_tracker::{
     app::build_router,
     db::make_db_pool,
+    lang::Lang,
     repos::{
         expense_group::{CreateExpenseGroupDbPayload, ExpenseGroupRepo},
         subscription::{CreateSubscriptionDbPayload, SubscriptionRepo},
@@ -9,10 +14,6 @@ use expense_tracker::{
     },
     routes::expense_groups::CreateExpenseGroupPayload,
     types::{AppState, SubscriptionTier},
-};
-use axum::{
-    body::Body,
-    http::{Request, StatusCode},
 };
 use http_body_util::BodyExt;
 use sqlx::PgPool;
@@ -54,19 +55,22 @@ async fn create_test_user_and_auth(pool: &PgPool) -> Result<(Uuid, String)> {
             current_period_start: Some(chrono::Utc::now()),
             current_period_end: Some(chrono::Utc::now() + chrono::Duration::days(90)),
         },
-    ).await?;
+    )
+    .await?;
 
     tx.commit().await?;
 
     // Generate JWT token
-    let token = expense_tracker::auth::encode_web_jwt(user.uid, "test-jwt-secret", 60 * 60 * 24 * 7)
-        .map_err(|e| anyhow::anyhow!("Failed to encode JWT: {}", e))?;
+    let token =
+        expense_tracker::auth::encode_web_jwt(user.uid, "test-jwt-secret", 60 * 60 * 24 * 7)
+            .map_err(|e| anyhow::anyhow!("Failed to encode JWT: {}", e))?;
 
     Ok((user.uid, token))
 }
 
 #[tokio::test]
 async fn test_list_expense_groups() -> Result<()> {
+    let lang = Lang::from_json("id");
     let pool = setup_test_db().await?;
     let (user_uid, token) = create_test_user_and_auth(&pool).await?;
 
@@ -93,6 +97,7 @@ async fn test_list_expense_groups() -> Result<()> {
     tx.commit().await?;
 
     let app_state = AppState {
+        lang,
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -114,7 +119,10 @@ async fn test_list_expense_groups() -> Result<()> {
     let groups: Vec<serde_json::Value> = serde_json::from_slice(&body)?;
 
     assert_eq!(groups.len(), 2);
-    let group_names: Vec<String> = groups.iter().map(|g| g["name"].as_str().unwrap().to_string()).collect();
+    let group_names: Vec<String> = groups
+        .iter()
+        .map(|g| g["name"].as_str().unwrap().to_string())
+        .collect();
     assert!(group_names.contains(&"Test Group 1".to_string()));
     assert!(group_names.contains(&"Test Group 2".to_string()));
 
@@ -123,6 +131,7 @@ async fn test_list_expense_groups() -> Result<()> {
 
 #[tokio::test]
 async fn test_get_expense_group() -> Result<()> {
+    let lang = Lang::from_json("id");
     let pool = setup_test_db().await?;
     let (user_uid, token) = create_test_user_and_auth(&pool).await?;
 
@@ -140,6 +149,7 @@ async fn test_get_expense_group() -> Result<()> {
     tx.commit().await?;
 
     let app_state = AppState {
+        lang,
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -173,6 +183,7 @@ async fn test_get_expense_group_not_found() -> Result<()> {
     let (_user_uid, token) = create_test_user_and_auth(&pool).await?;
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -205,6 +216,7 @@ async fn test_create_expense_group() -> Result<()> {
     };
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -218,9 +230,7 @@ async fn test_create_expense_group() -> Result<()> {
         .uri("/expense-groups")
         .header("content-type", "application/json")
         .header("authorization", format!("Bearer {}", token))
-        .body(Body::from(
-            serde_json::to_string(&payload).unwrap(),
-        ))?;
+        .body(Body::from(serde_json::to_string(&payload).unwrap()))?;
 
     let response = app.oneshot(request).await?;
     assert_eq!(response.status(), StatusCode::OK);
@@ -259,6 +269,7 @@ async fn test_update_expense_group() -> Result<()> {
     };
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -272,9 +283,7 @@ async fn test_update_expense_group() -> Result<()> {
         .uri(format!("/expense-groups/{}", group.uid))
         .header("content-type", "application/json")
         .header("authorization", format!("Bearer {}", token))
-        .body(Body::from(
-            serde_json::to_string(&update_payload).unwrap(),
-        ))?;
+        .body(Body::from(serde_json::to_string(&update_payload).unwrap()))?;
 
     let response = app.oneshot(request).await?;
     assert_eq!(response.status(), StatusCode::OK);
@@ -307,6 +316,7 @@ async fn test_delete_expense_group() -> Result<()> {
     tx.commit().await?;
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
@@ -342,6 +352,7 @@ async fn test_expense_groups_unauthorized() -> Result<()> {
     let pool = setup_test_db().await?;
 
     let app_state = AppState {
+        lang: Lang::from_json("id"),
         version: "test".to_string(),
         db_pool: pool.clone(),
         jwt_secret: "test-jwt-secret".to_string(),
