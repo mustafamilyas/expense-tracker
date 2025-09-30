@@ -155,4 +155,37 @@ impl CategoryRepo {
             .map_err(|e| DatabaseError::from_sqlx_error(e, "deleting category"))?;
         Ok(())
     }
+
+    pub async fn find_by_name_or_alias(
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        group_uid: Uuid,
+        name_or_alias: &str,
+    ) -> Result<Option<Category>, DatabaseError> {
+        // First check if it's a category name
+        let query = format!(
+            "SELECT uid, group_uid, name, description, created_at, updated_at FROM {} WHERE group_uid = $1 AND name = $2",
+            Self::get_table_name()
+        );
+        if let Ok(category) = sqlx::query_as::<_, Category>(&query)
+            .bind(group_uid)
+            .bind(name_or_alias)
+            .fetch_one(tx.as_mut())
+            .await
+        {
+            return Ok(Some(category));
+        }
+
+        // Then check aliases
+        let query = format!(
+            "SELECT c.uid, c.group_uid, c.name, c.description, c.created_at, c.updated_at FROM {} c JOIN categories_aliases ca ON c.uid = ca.category_uid WHERE ca.group_uid = $1 AND ca.alias = $2",
+            Self::get_table_name()
+        );
+        let category = sqlx::query_as::<_, Category>(&query)
+            .bind(group_uid)
+            .bind(name_or_alias)
+            .fetch_optional(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "finding category by name or alias"))?;
+        Ok(category)
+    }
 }

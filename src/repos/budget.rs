@@ -71,6 +71,24 @@ impl BudgetRepo {
         Ok(rows)
     }
 
+    pub async fn get_by_group_and_category(
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        group_uid: Uuid,
+        category_uid: Uuid,
+    ) -> Result<Option<Budget>, DatabaseError> {
+        let query = format!(
+            "SELECT uid, group_uid, category_uid, amount, period_year, period_month FROM {} WHERE group_uid = $1 AND category_uid = $2",
+            Self::get_table_name()
+        );
+        let budget = sqlx::query_as::<_, Budget>(&query)
+            .bind(group_uid)
+            .bind(category_uid)
+            .fetch_optional(tx.as_mut())
+            .await
+            .map_err(|e| DatabaseError::from_sqlx_error(e, "getting budget by group and category"))?;
+        Ok(budget)
+    }
+
     pub async fn count_by_group(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         group_uid: Uuid,

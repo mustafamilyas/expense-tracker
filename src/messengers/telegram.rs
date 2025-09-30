@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::commands::report::ReportCommand;
 use crate::commands::{
-    category::CategoryCommand, category_edit::CategoryEditCommand, expense::ExpenseCommand,
+    budget::BudgetCommand, budget_edit::BudgetEditCommand, category::CategoryCommand, category_edit::CategoryEditCommand, expense::ExpenseCommand,
     expense_edit::ExpenseEditCommand, help::HelpCommand, history::HistoryCommand,
 };
 use crate::config::Config;
@@ -92,6 +92,14 @@ impl TelegramMessenger {
                         }
                         "/history" => {
                             self.handle_history_command(msg.chat.id, text, &binding, &mut tx)
+                                .await?;
+                        }
+                        "/budget" => {
+                            self.handle_budget_command(msg.chat.id, text, &binding, &mut tx)
+                                .await?;
+                        }
+                        "/budget-edit" => {
+                            self.handle_budget_edit_command(msg.chat.id, text, &binding, &mut tx)
                                 .await?;
                         }
                         "/category" => {
@@ -227,6 +235,63 @@ impl TelegramMessenger {
         };
 
         self.bot.send_message(chat_id, final_response).await?;
+        Ok(())
+    }
+
+    async fn handle_budget_command(
+        &self,
+        chat_id: ChatId,
+        text: &str,
+        binding: &crate::repos::chat_binding::ChatBinding,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let response = match BudgetCommand::run(text, binding, tx, &self.lang).await {
+            Ok(result) => result,
+            Err(e) => {
+                tracing::error!("Error handling budget command: {}", e);
+                let mut response = e.to_string();
+                response.push_str("\n-----\n");
+                response.push_str("Format:\n/budget\n\nMenampilkan semua budget yang tersedia untuk grup ini.");
+
+                self.bot.send_message(chat_id, response).await?;
+                return Ok(());
+            }
+        };
+
+        // Truncate if too long for Telegram
+        let final_response = if response.len() > 4000 {
+            let mut truncated = response.chars().take(3950).collect::<String>();
+            truncated.push_str("...\n\n(Message truncated due to length)");
+            truncated
+        } else {
+            response
+        };
+
+        self.bot.send_message(chat_id, final_response).await?;
+        Ok(())
+    }
+
+    async fn handle_budget_edit_command(
+        &self,
+        chat_id: ChatId,
+        text: &str,
+        binding: &crate::repos::chat_binding::ChatBinding,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let response = match BudgetEditCommand::run(text, binding, tx, &self.lang).await {
+            Ok(result) => result,
+            Err(e) => {
+                tracing::error!("Error handling budget edit command: {}", e);
+                let mut response = e.to_string();
+                response.push_str("\n-----\n");
+                response.push_str("Format:\n/budget-edit\n[id]\n[category]=[amount]\n\nContoh:\n/budget-edit\n123e4567-e89b-12d3-a456-426614174000\nMakanan=50000");
+
+                self.bot.send_message(chat_id, response).await?;
+                return Ok(());
+            }
+        };
+
+        self.bot.send_message(chat_id, response).await?;
         Ok(())
     }
 

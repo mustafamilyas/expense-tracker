@@ -1,4 +1,6 @@
 pub mod base;
+pub mod budget;
+pub mod budget_edit;
 pub mod category;
 pub mod category_edit;
 pub mod expense;
